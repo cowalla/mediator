@@ -2,15 +2,32 @@ from gdax import AuthenticatedClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from fiat import sort_pair_by_fiat
+from settings import FIATS, SPLIT_CHARACTER
 
 
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
-class ClientUninitializedException(BaseException):
-    pass
+def sort_pair_by_fiat(currency_pair, fiat_order=None):
+    """
+    Orders a currency pair according to the order provided.
+
+    Exchanges do not agree which currency should come first in a pair, e.g. usdt-btc or btc-usdt.
+    Returns a pair (or any array) sorted according to fiat_order.
+    """
+    currencies = currency_pair.lower().split(SPLIT_CHARACTER)
+
+    if fiat_order is None:
+        # Mediator order
+        fiat_order = FIATS
+    if len(currencies) != 2:
+        # this function could be opened up to sort any length, if necessary
+        raise NotImplementedError
+
+    sorted_by_order = [c for _, c in sorted(zip(fiat_order, currencies))]
+
+    return (sorted_by_order[0], sorted_by_order[1])
 
 
 class ClientHelper(object):
@@ -65,8 +82,8 @@ class LiquiClientHelper(ClientHelper):
         self.fiats = self._get_fiats_from_pairs(self.pairs)
         self.currencies = self._get_currencies_from_pairs(self.pairs)
 
-    def get_ticker(self, currency_pairs):
-        liqui_pairs = [self._to_client_pair(p) for p in currency_pairs]
+    def get_ticker(self):
+        liqui_pairs = [self._to_client_pair(p) for p in self.pairs]
 
         return self.client.ticker(pair=','.join(liqui_pairs))
 
@@ -120,6 +137,7 @@ class PoloniexClientHelper(ClientHelper):
 
         return self.SPLIT_CHARACTER.join([currency, fiat])
 
+
 class GDAXClientHelper(ClientHelper):
     def __init__(self, **credentials):
         self.client = GDAXClient(**credentials)
@@ -127,18 +145,15 @@ class GDAXClientHelper(ClientHelper):
         super(GDAXClientHelper, self).__init__()
 
     def get_currencies(self):
-        return self.client.returnCurrencies().keys()
+        return self.client.get_info()['funds'].keys()
 
     def get_ticker(self):
-        return self.client.returnTicker()
+        return self.client.ticker()
 
     def get_pairs(self):
-        pairs = self.get_ticker().keys()
+        pairs = self.client.get_products()
 
         return [self._from_client_pair(pair) for pair in pairs]
-
-    def _client_get_pairs(self):
-        return self.client.returnTicker().keys()
 
     def _to_client_pair(self, pair):
         [fiat, currency] = self._to_fiat_currency(pair)

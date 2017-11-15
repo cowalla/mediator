@@ -11,7 +11,7 @@ POLONIEX = 'poloniex'
 helper_map = {
     GDAX: GDAXClientHelper,
     LIQUI: LiquiClientHelper,
-    POLONIEX: LiquiClientHelper,
+    POLONIEX: PoloniexClientHelper,
 }
 
 def downcase(function):
