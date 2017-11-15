@@ -1,3 +1,5 @@
+import json
+
 from exchanges import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 
 # exchange choices
@@ -12,6 +14,16 @@ helper_map = {
     POLONIEX: LiquiClientHelper,
 }
 
+def downcase(function):
+    """
+    Downcases the output of a function acting on a client.
+    """
+    def wrapper(*args, **kwargs):
+        data = function(*args, **kwargs)
+
+        return json.loads(json.dumps(data).lower())
+
+    return wrapper
 
 
 class MetaClient(object):
@@ -40,13 +52,23 @@ class MetaClient(object):
             self.helpers[client] = HelperClass(**credentials)
 
 
+    @downcase
     def ticker(self, exchange, pairs):
         """
         Given an exchange, returns the ticker for the pairs given
         """
         helper = self.helpers[exchange]
 
-        return helper.ticker(pairs)
+        return helper.get_ticker(pairs)
+
+    @downcase
+    def pairs(self, exchange, pairs):
+        """
+        Given an exchange, returns the ticker for the pairs given
+        """
+        helper = self.helpers[exchange]
+
+        return helper.get_pairs(pairs)
 
 
 # Overlays for each supported client
