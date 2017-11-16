@@ -1,18 +1,16 @@
 import json
 
-from exchanges import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
-
-# exchange choices
-GDAX = 'gdax'
-LIQUI = 'liqui'
-POLONIEX = 'poloniex'
-
+from clients.exchanges import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+from settings import GDAX, LIQUI, POLONIEX
 
 helper_map = {
     GDAX: GDAXClientHelper,
     LIQUI: LiquiClientHelper,
     POLONIEX: PoloniexClientHelper,
 }
+
+class DowncaseError(SyntaxError):
+    pass
 
 def downcase(function):
     """
@@ -21,7 +19,16 @@ def downcase(function):
     def wrapper(*args, **kwargs):
         data = function(*args, **kwargs)
 
-        return json.loads(json.dumps(data).lower())
+        try:
+            return json.loads(json.dumps(data).lower())
+        except:
+            msg = (
+                'Could not downcase function with '
+                'args: {}, '
+                'kwargs: {}'
+            ).format(str(args), str(kwargs))
+
+            raise DowncaseError(msg)
 
     return wrapper
 

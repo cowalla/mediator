@@ -2,11 +2,22 @@ from gdax import AuthenticatedClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from settings import FIATS, SPLIT_CHARACTER
+from settings import FIATS, SPLIT_CHARACTER, GDAX, LIQUI, POLONIEX
 
 
 def flatten(l):
-    return [item for sublist in l for item in sublist]
+    # flattens a list one level
+    flattened = []
+
+    for item in l:
+        if isinstance(item, list):
+            flattened += item
+        elif isinstance(item, tuple):
+            flattened += list(item)
+        else:
+            flattened.append(item)
+
+    return flattened
 
 
 def sort_pair_by_fiat(currency_pair, fiat_order=None):
@@ -31,23 +42,37 @@ def sort_pair_by_fiat(currency_pair, fiat_order=None):
 
 
 class ClientHelper(object):
+    NAME = None
+    CLIENT_CLASS = None
     SPLIT_CHARACTER = '_'
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(ClientHelper, self).__init__()
 
         self.fiats = set()
         self.pairs = []
         self.currencies = []
 
-        self.initialize()
+        self.initialize(*args, **kwargs)
 
-    def initialize(self):
-        self.pairs = self._client_get_pairs()
+    def initialize(self, *args, **kwargs):
+        self.client = self.CLIENT_CLASS(*args, **kwargs)
+
+        self.client_pairs = sorted(self._get_client_pairs())
+        self.pair_map = {
+            self._from_client_pair(p): p
+            for p in self.client_pairs
+        }
+        self.pairs = sorted(self.pair_map.keys())
         self.fiats = self._get_fiats_from_pairs(self.pairs)
-        self.currencies = self._get_currencies_from_pairs(self.pairs)
+        self.currencies = sorted(self._get_currencies_from_pairs(self.pairs))
 
-    def _client_get_pairs(self):
+    def get_pairs(self):
+        pairs = self._get_client_pairs()
+
+        return [self._from_client_pair(pair) for pair in pairs]
+
+    def _get_client_pairs(self):
         raise NotImplementedError
 
     def _from_client_pair(self, pair):
@@ -56,13 +81,17 @@ class ClientHelper(object):
 
     def _to_client_pair(self, pair):
         # translates a pair from `Mediator` format to its own client format
-        raise NotImplementedError
+        return self.pair_map[pair]
 
     def _get_fiats_from_pairs(self, pairs):
-        return set([self._to_fiat_currency(pair)[0] for pair in pairs])
+        flat = flatten([pair[0] for pair in pairs])
+
+        return list(set(flat))
 
     def _get_currencies_from_pairs(self, pairs):
-        return set([flatten(self._to_fiat_currency(pair)) for pair in pairs])
+        flat = flatten(pairs)
+
+        return list(set(flat))
 
     def _to_fiat_currency(self, pair, character=None):
         if character is None:
@@ -72,48 +101,30 @@ class ClientHelper(object):
 
 
 class LiquiClientHelper(ClientHelper):
-    def __init__(self, **credentials):
-        self.client = LiquiClient(**credentials)
-
-        super(LiquiClientHelper, self).__init__()
-
-    def initialize(self):
-        self.pairs = self._client_get_pairs()
-        self.fiats = self._get_fiats_from_pairs(self.pairs)
-        self.currencies = self._get_currencies_from_pairs(self.pairs)
+    NAME = LIQUI
+    CLIENT_CLASS = LiquiClient
 
     def get_ticker(self):
-        liqui_pairs = [self._to_client_pair(p) for p in self.pairs]
+        all_liqui_pairs = [self._to_client_pair(p) for p in self.pairs]
+        pair = ','.join(all_liqui_pairs)
 
-        return self.client.ticker(pair=','.join(liqui_pairs))
+        return self.client.ticker(pair=pair)
 
     def get_currencies(self):
         pairs = self.get_pairs()
 
-        return list(set([flatten(self._to_fiat_currency(pair)) for pair in pairs]))
+        return self._get_currencies_from_pairs(pairs)
 
-    def get_pairs(self):
-        pairs = self._client_get_pairs()
-
-        return [self._from_client_pair(pair) for pair in pairs]
-
-    def _client_get_pairs(self):
+    def _get_client_pairs(self):
         return self.client.info()['pairs'].keys()
 
-    def _to_client_pair(self, pair):
-        [fiat, currency] = self._to_fiat_currency(pair)
-
-        if fiat in self.fiats:
-            return pair
-
-        return self.SPLIT_CHARACTER.join([currency, fiat])
+    def _get_fiats_from_pairs(self, pairs):
+        return set([pair[0] for pair in pairs])
 
 
 class PoloniexClientHelper(ClientHelper):
-    def __init__(self, **credentials):
-        self.client = PoloniexClient(**credentials)
-
-        super(PoloniexClientHelper, self).__init__()
+    NAME = POLONIEX
+    CLIENT_CLASS = PoloniexClient
 
     def get_currencies(self):
         return self.client.returnCurrencies().keys()
@@ -121,28 +132,13 @@ class PoloniexClientHelper(ClientHelper):
     def get_ticker(self):
         return self.client.returnTicker()
 
-    def get_pairs(self):
-        pairs = self.get_ticker().keys()
-
-        return [self._from_client_pair(pair) for pair in pairs]
-
-    def _client_get_pairs(self):
-        return self.client.returnTicker().keys()
-
-    def _to_client_pair(self, pair):
-        [fiat, currency] = self._to_fiat_currency(pair)
-
-        if fiat in self.fiats:
-            return pair
-
-        return self.SPLIT_CHARACTER.join([currency, fiat])
+    def _get_client_pairs(self):
+        return self.get_ticker().keys()
 
 
 class GDAXClientHelper(ClientHelper):
-    def __init__(self, **credentials):
-        self.client = GDAXClient(**credentials)
-
-        super(GDAXClientHelper, self).__init__()
+    NAME = GDAX
+    CLIENT_CLASS = GDAXClient
 
     def get_currencies(self):
         return self.client.get_info()['funds'].keys()
@@ -150,15 +146,5 @@ class GDAXClientHelper(ClientHelper):
     def get_ticker(self):
         return self.client.ticker()
 
-    def get_pairs(self):
-        pairs = self.client.get_products()
-
-        return [self._from_client_pair(pair) for pair in pairs]
-
-    def _to_client_pair(self, pair):
-        [fiat, currency] = self._to_fiat_currency(pair)
-
-        if fiat in self.fiats:
-            return pair
-
-        return self.SPLIT_CHARACTER.join([currency, fiat])
+    def _get_client_pairs(self):
+        return self.client.get_products()

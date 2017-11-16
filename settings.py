@@ -17,3 +17,8 @@ FIATS = [
 
 # character that splits currency pairs. "fiat<split>currency"
 SPLIT_CHARACTER = '_'
+
+# supported exchanges
+GDAX = 'gdax'
+LIQUI = 'liqui'
+POLONIEX = 'poloniex'
