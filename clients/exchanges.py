@@ -19,6 +19,12 @@ def flatten(l):
 
     return flattened
 
+def get_fiat_order(f, fiat_order):
+    try:
+        return fiat_order.index(f)
+    except ValueError:
+        # not in fiat_order
+        return None
 
 def sort_pair_by_fiat(currency_pair, fiat_order=None):
     """
@@ -36,10 +42,17 @@ def sort_pair_by_fiat(currency_pair, fiat_order=None):
         # this function could be opened up to sort any length, if necessary
         raise NotImplementedError
 
-    sorted_by_order = [c for _, c in sorted(zip(fiat_order, currencies))]
+    [a, b] = currencies
+    a_index, b_index = get_fiat_order(a, fiat_order), get_fiat_order(b, fiat_order)
 
-    return (sorted_by_order[0], sorted_by_order[1])
-
+    if b_index is None:
+        return a, b
+    elif a_index is None:
+        return b, a
+    elif a_index < b_index:
+        return a, b
+    else:
+        return b, a
 
 class ClientHelper(object):
     NAME = None
@@ -65,7 +78,10 @@ class ClientHelper(object):
         }
         self.pairs = sorted(self.pair_map.keys())
         self.fiats = self._get_fiats_from_pairs(self.pairs)
-        self.currencies = sorted(self._get_currencies_from_pairs(self.pairs))
+        self.currencies = self.get_currencies()
+
+    def get_currencies(self):
+        raise NotImplementedError
 
     def get_pairs(self):
         pairs = self._get_client_pairs()
@@ -118,16 +134,13 @@ class LiquiClientHelper(ClientHelper):
     def _get_client_pairs(self):
         return self.client.info()['pairs'].keys()
 
-    def _get_fiats_from_pairs(self, pairs):
-        return set([pair[0] for pair in pairs])
-
 
 class PoloniexClientHelper(ClientHelper):
     NAME = POLONIEX
     CLIENT_CLASS = PoloniexClient
 
     def get_currencies(self):
-        return self.client.returnCurrencies().keys()
+        return [k.lower() for k in self.client.returnCurrencies().keys()]
 
     def get_ticker(self):
         return self.client.returnTicker()
@@ -137,14 +150,15 @@ class PoloniexClientHelper(ClientHelper):
 
 
 class GDAXClientHelper(ClientHelper):
+    # unlikely to be used in the future
     NAME = GDAX
     CLIENT_CLASS = GDAXClient
 
     def get_currencies(self):
-        return self.client.get_info()['funds'].keys()
+        return self.client.get_currencies()
 
     def get_ticker(self):
-        return self.client.ticker()
+        return self.client.get_product_ticker()
 
     def _get_client_pairs(self):
         return self.client.get_products()
