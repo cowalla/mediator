@@ -1,6 +1,6 @@
 import json
 
-from clients.exchanges import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+from clients.helpers import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 from settings import GDAX, LIQUI, POLONIEX
 
 helper_map = {

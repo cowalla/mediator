@@ -1,7 +1,7 @@
 import unittest
 from mock import Mock, patch, create_autospec
 
-from clients.exchanges import (
+from clients.helpers import (
     flatten, sort_pair_by_fiat, LiquiClientHelper, PoloniexClientHelper, GDAXClientHelper
 )
 from fixtures.liqui import info as liqui_info, ticker as liqui_ticker
@@ -117,7 +117,7 @@ class TestPoloniexClient(unittest.TestCase):
     def test_get_currencies(self):
         currencies = self.helper.get_currencies()
 
-        self.assertIn('usdt', currencies)
+        self.assertIn('USDT', currencies)
         self.assertIn('btc', currencies)
         self.assertIn('omg', currencies)
 
