@@ -97,7 +97,7 @@ class TestPoloniexClient(unittest.TestCase):
         self.helper = PoloniexClientHelper(*self.credentials)
 
         self.client_pairs = poloniex_ticker.response.keys()
-        self.currencies = [k.lower() for k in poloniex_currencies.response.keys()]
+        self.currencies = poloniex_currencies.response.keys()
 
     def test_init(self):
         client_pairs = poloniex_ticker.response.keys()
@@ -106,7 +106,7 @@ class TestPoloniexClient(unittest.TestCase):
         self.assertIn(('btc', 'ltc'), self.helper.pairs)
 
         self.assertListEqual(self.helper.fiats, ['ltc', 'zec', 'dash', 'xmr', 'btc', 'eth', 'usdt'])
-        self.assertEqual(self.helper.currencies, self.currencies)
+        self.assertIn('etc', self.helper.currencies)
 
     def test_get_pairs(self):
         pairs = self.helper.get_pairs()
@@ -117,7 +117,7 @@ class TestPoloniexClient(unittest.TestCase):
     def test_get_currencies(self):
         currencies = self.helper.get_currencies()
 
-        self.assertIn('USDT', currencies)
+        self.assertIn('usdt', currencies)
         self.assertIn('btc', currencies)
         self.assertIn('omg', currencies)
 

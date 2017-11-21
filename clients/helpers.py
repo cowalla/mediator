@@ -140,7 +140,7 @@ class PoloniexClientHelper(ClientHelper):
     CLIENT_CLASS = PoloniexClient
 
     def get_currencies(self):
-        return self.client.returnCurrencies().keys()
+        return [k.lower() for k in self.client.returnCurrencies().keys()]
 
     def get_ticker(self):
         return self.client.returnTicker()
