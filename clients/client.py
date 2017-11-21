@@ -3,11 +3,6 @@ import json
 from clients.helpers import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 from settings import GDAX, LIQUI, POLONIEX
 
-helper_map = {
-    GDAX: GDAXClientHelper,
-    LIQUI: LiquiClientHelper,
-    POLONIEX: PoloniexClientHelper,
-}
 
 class DowncaseError(SyntaxError):
     pass
@@ -45,18 +40,25 @@ class MetaClient(object):
           key: ...,
           secret: ...,
     """
-    def __init__(self, **client_credentials):
+    HELPER_MAP = {
+        GDAX: GDAXClientHelper,
+        LIQUI: LiquiClientHelper,
+        POLONIEX: PoloniexClientHelper,
+    }
+
+
+    def __init__(self, **exchange_kwargs):
         super(MetaClient, self).__init__()
 
         self.helpers = {}
 
-        for client, credentials in client_credentials.iteritems():
-            HelperClass = helper_map.get(client)
+        for exchange, kwargs in exchange_kwargs.iteritems():
+            HelperClass = self.HELPER_MAP.get(exchange)
 
             if HelperClass is None:
-                raise NotImplementedError('{} is not implimented!'.format(client))
+                raise NotImplementedError('{} is not implemented!'.format(exchange))
 
-            self.helpers[client] = HelperClass(**credentials)
+            self.helpers[exchange] = HelperClass(**kwargs)
 
 
     @downcase

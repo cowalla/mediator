@@ -1,6 +1,6 @@
 import unittest
 
-from clients.client import downcase, DowncaseError
+from clients.client import downcase, DowncaseError, MetaClient
 
 
 class TestDowncase(unittest.TestCase):
@@ -55,3 +55,19 @@ class TestDowncase(unittest.TestCase):
 
         with self.assertRaises(DowncaseError):
             self.my_function(not_downcaseable)
+
+
+class TestMetaClient(unittest.TestCase):
+
+    def setUp(self):
+        self.kwargs = {'liqui': {}, 'poloniex': {}}
+
+    def test_init(self):
+        client = MetaClient(**self.kwargs)
+        self.assertEqual(len(client.helpers), 2)
+
+    def test_init_unsupported_exchange(self):
+        self.kwargs['unsupported'] = {}
+
+        with self.assertRaisesRegexp(NotImplementedError, 'unsupported is not implemented!'):
+            MetaClient(**self.kwargs)
