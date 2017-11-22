@@ -56,8 +56,6 @@ class TestUtils(unittest.TestCase):
 
 
 # TODO: mock clients correctly
-
-
 class TestBittrexClient(unittest.TestCase):
 
     def setUp(self):
