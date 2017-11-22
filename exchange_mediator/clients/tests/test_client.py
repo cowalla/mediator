@@ -2,9 +2,9 @@ from mock import patch
 from unittest import TestCase
 
 
-from clients.client import downcase, MetaClient
-import fixtures
-from testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
+from exchange_mediator.clients.client import downcase, MetaClient
+from exchange_mediator import fixtures
+from exchange_mediator.testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
 
 
 class TestDowncase(TestCase):

@@ -1,15 +1,18 @@
 import unittest
 
-from clients.helpers import (
-    flatten, rename_keys, sort_pair_by_fiat, BittrexClientHelper, LiquiClientHelper, PoloniexClientHelper, GDAXClientHelper
+from exchange_mediator.clients.helpers import (
+    flatten, rename_keys, sort_pair_by_fiat, BittrexClientHelper, LiquiClientHelper, PoloniexClientHelper,
+    GDAXClientHelper,
 )
-from fixtures.bittrex import getmarkets as bittrex_getmarkets, getmarketsummaries as bittrex_getmarketsummaries
-from fixtures.liqui import info as liqui_info, ticker as liqui_ticker
-from fixtures.poloniex import (
+from exchange_mediator.fixtures.bittrex import (
+    getmarkets as bittrex_getmarkets, getmarketsummaries as bittrex_getmarketsummaries
+)
+from exchange_mediator.fixtures.liqui import info as liqui_info, ticker as liqui_ticker
+from exchange_mediator.fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
 
-from testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
+from exchange_mediator.testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
 
 
 class TestUtils(unittest.TestCase):

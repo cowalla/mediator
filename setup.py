@@ -1,22 +1,13 @@
-import os
 from setuptools import setup
 
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
-
 setup(
-    name = "Mediator",
+    name = "exchange_mediator",
     version = "0.0.1",
     author = "Connor Wallace",
     author_email = "wallaconno@gmail.com",
-    description = ('Client that allows communication between many exchanges'),
+    description = ('Client that allows communication between many crypto exchanges'),
     license = "MIT",
     keywords = "cryptocurrency client",
     url = "http://www.github.com/cowalla/mediator",
-    packages=['clients', 'fixtures'],
-    long_description=read('readme.md'),
+    packages=['exchange_mediator'],
 )
