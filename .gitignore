@@ -7,5 +7,10 @@ lib/
 pip-selfcheck.json
 .cache
 man/
+
 // todo: remove
 secret.py
+
+dist/
+Mediator.egg-info/
+
