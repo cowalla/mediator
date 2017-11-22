@@ -1,3 +1,4 @@
+from copy import deepcopy
 from mock import Mock
 
 from fixtures.bittrex import getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
@@ -13,7 +14,7 @@ class MockBittrexClient(Mock):
         return bittrex_get_markets.response
 
     def get_market_summaries(self):
-        return bittrex_get_market_summaries.response
+        return deepcopy(bittrex_get_market_summaries.response)
 
 
 class MockLiquiClient(Mock):

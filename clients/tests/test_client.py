@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from clients.client import downcase, MetaClient
 import fixtures
-from testing import MockLiquiClient, MockPoloniexClient
+from testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
 
 
 class TestDowncase(TestCase):
@@ -22,25 +22,44 @@ class TestDowncase(TestCase):
 
         self.assertEqual(downcased, my_string.lower())
 
+
+# TODO: mock clients correctly
 class TestMetaClient(TestCase):
 
     @patch('liqui.Liqui')
     @patch('poloniex.Poloniex')
     def setUp(self, mockPoloniex, mockLiqui):
         self.maxDiff = None
-        self.kwargs = {'liqui': {}, 'poloniex': {}}
+        self.kwargs = {'liqui': {}, 'poloniex': {}, 'bittrex': {'api_key': None, 'api_secret': None}}
         self.client = MetaClient(**self.kwargs)
+        self.client.helpers['bittrex'].client = MockBittrexClient()
         self.client.helpers['liqui'].client = MockLiquiClient()
         self.client.helpers['poloniex'].client = MockPoloniexClient()
 
     def test_init(self):
-        self.assertEqual(len(self.client.helpers), 2)
+        self.assertEqual(len(self.client.helpers), 3)
 
     def test_init_unsupported_exchange(self):
         self.kwargs['unsupported'] = {}
 
         with self.assertRaisesRegexp(NotImplementedError, 'unsupported is not implemented!'):
             MetaClient(**self.kwargs)
+
+    def test_bittrex_ticker(self):
+        btc_1st = {
+            'last': 0.00004692,
+            'lowest_ask': 0.00004691,
+            'highest_bid': 0.00004633,
+            'base_volume': 106.56404429,
+            'current_volume': 2241173.71259967,
+            'high': 0.00004996,
+            'low': 0.00004201,
+            'updated': '2017-11-22t20:41:49.297',
+        }
+        self.assertDictEqual(
+            btc_1st,
+            self.client.ticker('bittrex')['btc_1st']
+        )
 
     def test_liqui_ticker(self):
         bmc_usdt = {
