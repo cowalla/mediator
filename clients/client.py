@@ -1,7 +1,7 @@
 import json
 
-from clients.helpers import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
-from settings import GDAX, LIQUI, POLONIEX
+from clients.helpers import BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+from settings import BITTREX, GDAX, LIQUI, POLONIEX
 
 
 def downcase(data):
@@ -9,25 +9,6 @@ def downcase(data):
         return data.lower()
     except:
         return data
-
-    if isinstance(data, basestring):
-        return data.lower()
-    elif isinstance(data, int) or isinstance(data, float):
-        return data
-
-    datatype = type(data)
-
-    if datatype is list:
-        return [downcase(item) for item in data]
-    elif datatype is tuple:
-        return (downcase(item) for item in data)
-    elif datatype is dict:
-        return {
-            downcase(k): downcase(v)
-            for k, v in data.iteritems()
-        }
-    else:
-        raise NotImplementedError('cannot downcase data type %s' % datatype)
 
 
 class MetaClient(object):
@@ -43,6 +24,7 @@ class MetaClient(object):
           secret: ...,
     """
     HELPER_MAP = {
+        BITTREX: BittrexClientHelper,
         GDAX: GDAXClientHelper,
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,

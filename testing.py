@@ -1,10 +1,19 @@
-import unittest
-from mock import Mock, patch, create_autospec
+from mock import Mock
 
+from fixtures.bittrex import getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
 from fixtures.liqui import info as liqui_info, ticker as liqui_ticker
 from fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
+
+
+class MockBittrexClient(Mock):
+
+    def get_markets(self):
+        return bittrex_get_markets.response
+
+    def get_market_summaries(self):
+        return bittrex_get_market_summaries.response
 
 
 class MockLiquiClient(Mock):

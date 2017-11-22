@@ -19,6 +19,7 @@ FIATS = [
 SPLIT_CHARACTER = '_'
 
 # supported exchanges
+BITTREX = 'bittrex'
 GDAX = 'gdax'
 LIQUI = 'liqui'
 POLONIEX = 'poloniex'
