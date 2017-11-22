@@ -1,7 +1,7 @@
 import json
 
-from clients.helpers import GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
-from settings import GDAX, LIQUI, POLONIEX
+from clients.helpers import BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+from settings import BITTREX, GDAX, LIQUI, POLONIEX
 
 
 def downcase(data):
@@ -43,6 +43,7 @@ class MetaClient(object):
           secret: ...,
     """
     HELPER_MAP = {
+        BITTREX: BittrexClientHelper,
         GDAX: GDAXClientHelper,
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,

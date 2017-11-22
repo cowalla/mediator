@@ -1,8 +1,9 @@
+from bittrex.bittrex import Bittrex as BittrexClient
 from gdax import AuthenticatedClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from settings import FIATS, SPLIT_CHARACTER, GDAX, LIQUI, POLONIEX
+from settings import FIATS, SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
 
 
 class ClientError(AttributeError):
@@ -135,6 +136,50 @@ class ClientHelper(object):
 
     def mediator_pair(self, pair):
         return self.SPLIT_CHARACTER.join(sorted_by_fiat(self._to_fiat_currency(pair)))
+
+
+class BittrexClientHelper(ClientHelper):
+    TICKER_MAP = {
+        'Last': 'last',
+        'Bid': 'highest_bid',
+        'Ask': 'lowest_ask',
+        'BaseVolume': 'base_volume',
+        'Volume': 'current_volume',
+        'High': 'high',
+        'Low': 'low',
+        'TimeStamp': 'updated',
+    }
+
+    NAME = BITTREX
+    CLIENT_CLASS = BittrexClient
+    SPLIT_CHARACTER = '-'
+
+    def get_ticker(self):
+        ticker_response = self.client.get_ticker()
+
+        if not ticker_response['success']:
+            raise ClientError(ticker_response['message'])
+
+        ticker = {}
+
+        for entry in ticker_response:
+            client_pair = entry.pop('MarketName')
+            ticker[self.mediator_pair(client_pair)] = rename_keys(entry, self.TICKER_MAP)
+
+        return ticker
+
+    def get_currencies(self):
+        pairs = self.get_pairs()
+
+        return self._get_currencies_from_pairs(pairs)
+
+    def _get_client_pairs(self):
+        markets_response = self.client.get_markets()
+
+        return [
+            self.SPLIT_CHARACTER.join([r['BaseCurrency'], r['MarketCurrency']])
+            for r in markets_response['result']
+        ]
 
 
 class LiquiClientHelper(ClientHelper):
