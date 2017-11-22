@@ -6,5 +6,6 @@ include/
 lib/
 pip-selfcheck.json
 .cache
+man/
 // todo: remove
 secret.py
