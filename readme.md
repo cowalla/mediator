@@ -12,3 +12,6 @@
   - format is `endpoint.py`, includes request_url and response in file.
 - Add a client helper to helpers.py defining methods for the helper
 
+### testing 
+- `py.test clients/tests `
+

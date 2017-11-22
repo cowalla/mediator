@@ -5,6 +5,10 @@ from poloniex import Poloniex as PoloniexClient
 from settings import FIATS, SPLIT_CHARACTER, GDAX, LIQUI, POLONIEX
 
 
+class ClientError(AttributeError):
+    pass
+
+
 def flatten(l):
     # flattens a list one level
     flattened = []
@@ -19,6 +23,7 @@ def flatten(l):
 
     return flattened
 
+
 def get_fiat_order(f, fiat_order):
     try:
         return fiat_order.index(f)
@@ -26,15 +31,16 @@ def get_fiat_order(f, fiat_order):
         # not in fiat_order
         return None
 
-def sort_pair_by_fiat(currency_pair, fiat_order=None):
-    """
-    Orders a currency pair according to the order provided.
 
-    Exchanges do not agree which currency should come first in a pair, e.g. usdt-btc or btc-usdt.
-    Returns a pair (or any array) sorted according to fiat_order.
-    """
-    currencies = currency_pair.lower().split(SPLIT_CHARACTER)
+def rename_keys(data, map):
+    return {
+        local_key: data[client_key]
+        for client_key, local_key in map.iteritems()
+        if data.get(client_key) is not None
+    }
 
+
+def sorted_by_fiat(currencies, fiat_order=None):
     if fiat_order is None:
         # Mediator order
         fiat_order = FIATS
@@ -53,6 +59,18 @@ def sort_pair_by_fiat(currency_pair, fiat_order=None):
         return a, b
     else:
         return b, a
+
+
+def sort_pair_by_fiat(currency_pair, fiat_order=None):
+    """
+    Orders a currency pair according to the order provided.
+
+    Exchanges do not agree which currency should come first in a pair, e.g. usdt-btc or btc-usdt.
+    Returns a pair (or any array) sorted according to fiat_order.
+    """
+    currencies = currency_pair.lower().split(SPLIT_CHARACTER)
+
+    return sorted_by_fiat(currencies, fiat_order)
 
 class ClientHelper(object):
     NAME = None
@@ -115,16 +133,38 @@ class ClientHelper(object):
 
         return pair.split(character)
 
+    def mediator_pair(self, pair):
+        return self.SPLIT_CHARACTER.join(sorted_by_fiat(self._to_fiat_currency(pair)))
+
 
 class LiquiClientHelper(ClientHelper):
+    TICKER_MAP = {
+        'last': 'last',
+        'buy': 'highest_bid',
+        'sell': 'lowest_ask',
+        'vol': 'base_volume',
+        'vol_cur': 'current_volume',
+        'high': 'high',
+        'low': 'low',
+        'updated': 'updated',
+        'avg': 'average',
+    }
+
     NAME = LIQUI
     CLIENT_CLASS = LiquiClient
 
     def get_ticker(self):
         all_liqui_pairs = [self._to_client_pair(p) for p in self.pairs]
-        pair = ','.join(all_liqui_pairs)
+        pair = '-'.join(all_liqui_pairs)
+        ticker_response = self.client.ticker(pair=pair)
 
-        return self.client.ticker(pair=pair)
+        if ticker_response.get('error'):
+            raise ClientError(ticker_response['error'])
+
+        return {
+            self.mediator_pair(pair): rename_keys(data, self.TICKER_MAP)
+            for pair, data in ticker_response.iteritems()
+        }
 
     def get_currencies(self):
         pairs = self.get_pairs()
@@ -136,14 +176,32 @@ class LiquiClientHelper(ClientHelper):
 
 
 class PoloniexClientHelper(ClientHelper):
+    TICKER_MAP = {
+        'id': 'id',
+        'last': 'last',
+        'lowestAsk': 'lowest_ask',
+        'highestBid': 'highest_bid',
+        'percentChange': 'percent_change',
+        'baseVolume': 'base_volume',
+        'quoteVolume': 'quote_volume',
+        'isFrozen': 'is_frozen',
+        'high24hr': 'high',
+        'low24hr': 'low',
+    }
+
     NAME = POLONIEX
     CLIENT_CLASS = PoloniexClient
 
     def get_currencies(self):
-        return [k.lower() for k in self.client.returnCurrencies().keys()]
+        return self.client.returnCurrencies().keys()
 
     def get_ticker(self):
-        return self.client.returnTicker()
+        ticker_response = self.client.returnTicker()
+
+        return {
+            self.mediator_pair(pair): rename_keys(data, self.TICKER_MAP)
+            for pair, data in ticker_response.iteritems()
+        }
 
     def _get_client_pairs(self):
         return self.get_ticker().keys()

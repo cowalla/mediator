@@ -2,12 +2,14 @@ import unittest
 from mock import Mock, patch, create_autospec
 
 from clients.helpers import (
-    flatten, sort_pair_by_fiat, LiquiClientHelper, PoloniexClientHelper, GDAXClientHelper
+    flatten, rename_keys, sort_pair_by_fiat, LiquiClientHelper, PoloniexClientHelper, GDAXClientHelper
 )
 from fixtures.liqui import info as liqui_info, ticker as liqui_ticker
 from fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
+
+from testing import MockLiquiClient, MockPoloniexClient
 
 
 class TestUtils(unittest.TestCase):
@@ -31,16 +33,26 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(fiat, 'second')
         self.assertEqual(currency, 'last')
 
+    def test_rename_keys(self):
+        data = {
+            'price': 1234,
+            'sell': 1235,
+            'buy': 1233,
+        }
+        map = {
+            'price': 'average_price',
+            'sell': 'average_sell',
+            'buy': 'average_buy',
+        }
 
-class MockLiquiClient(Mock):
-    def info(self):
-        return liqui_info.response
-
-    def ticker(self, pair):
-        response = liqui_ticker.response
-        pairs = pair.split(',')
-
-        return {p: response[p] for p in pairs}
+        self.assertDictEqual(
+            rename_keys(data, map),
+            {
+                'average_price': 1234,
+                'average_sell': 1235,
+                'average_buy': 1233,
+            }
+        )
 
 
 class TestLiquiClient(unittest.TestCase):
@@ -76,21 +88,27 @@ class TestLiquiClient(unittest.TestCase):
 
     def test_get_ticker(self):
         ticker_info = self.helper.get_ticker()
+        keys = [
+            'last',
+            'lowest_ask',
+            'highest_bid',
+            'base_volume',
+            'current_volume',
+            'high',
+            'low',
+            'updated',
+            'average',
+        ]
+        self.assertIn('btc_omg', ticker_info)
+        ticker_example = ticker_info['btc_omg']
 
-        self.assertDictEqual(ticker_info, liqui_ticker.response)
-
-
-class MockPoloniexClient(Mock):
-    def returnCurrencies(self):
-        return poloniex_currencies.response
-
-    def returnTicker(self):
-        return poloniex_ticker.response
+        self.assertListEqual(sorted(ticker_example.keys()), sorted(keys))
 
 
 class TestPoloniexClient(unittest.TestCase):
 
     def setUp(self):
+        self.maxDiff = None
         PoloniexClientHelper.CLIENT_CLASS = MockPoloniexClient
 
         self.credentials = ['mockKey', 'mockSecret']
@@ -106,7 +124,7 @@ class TestPoloniexClient(unittest.TestCase):
         self.assertIn(('btc', 'ltc'), self.helper.pairs)
 
         self.assertListEqual(self.helper.fiats, ['ltc', 'zec', 'dash', 'xmr', 'btc', 'eth', 'usdt'])
-        self.assertIn('etc', self.helper.currencies)
+        self.assertIn('ETC', self.helper.currencies)
 
     def test_get_pairs(self):
         pairs = self.helper.get_pairs()
@@ -117,13 +135,28 @@ class TestPoloniexClient(unittest.TestCase):
     def test_get_currencies(self):
         currencies = self.helper.get_currencies()
 
-        self.assertIn('usdt', currencies)
-        self.assertIn('btc', currencies)
-        self.assertIn('omg', currencies)
+        self.assertIn('USDT', currencies)
+        self.assertIn('BTC', currencies)
+        self.assertIn('OMG', currencies)
 
     def test_get_ticker(self):
         ticker_info = self.helper.get_ticker()
+        keys = [
+            'id',
+            'last',
+            'lowest_ask',
+            'highest_bid',
+            'percent_change',
+            'base_volume',
+            'quote_volume',
+            'is_frozen',
+            'high',
+            'low'
+        ]
 
-        self.assertDictEqual(ticker_info, poloniex_ticker.response)
+        # should exist
+        self.assertIn('BTC_BCN', ticker_info)
+        ticker_example = ticker_info['BTC_BCN']
+        self.assertListEqual(sorted(ticker_example.keys()), sorted(keys))
 
 

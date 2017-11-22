@@ -4,28 +4,30 @@ from clients.helpers import GDAXClientHelper, LiquiClientHelper, PoloniexClientH
 from settings import GDAX, LIQUI, POLONIEX
 
 
-class DowncaseError(SyntaxError):
-    pass
+def downcase(data):
+    try:
+        return data.lower()
+    except:
+        return data
 
-def downcase(function):
-    """
-    Downcases the output of a function acting on a client.
-    """
-    def wrapper(*args, **kwargs):
-        data = function(*args, **kwargs)
+    if isinstance(data, basestring):
+        return data.lower()
+    elif isinstance(data, int) or isinstance(data, float):
+        return data
 
-        try:
-            return json.loads(json.dumps(data).lower())
-        except:
-            msg = (
-                'Could not downcase function with '
-                'args: {}, '
-                'kwargs: {}'
-            ).format(str(args), str(kwargs))
+    datatype = type(data)
 
-            raise DowncaseError(msg)
-
-    return wrapper
+    if datatype is list:
+        return [downcase(item) for item in data]
+    elif datatype is tuple:
+        return (downcase(item) for item in data)
+    elif datatype is dict:
+        return {
+            downcase(k): downcase(v)
+            for k, v in data.iteritems()
+        }
+    else:
+        raise NotImplementedError('cannot downcase data type %s' % datatype)
 
 
 class MetaClient(object):
@@ -45,7 +47,10 @@ class MetaClient(object):
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,
     }
-
+    # Actions to take on all individual entries in a response
+    DATA_PROCESSORS = [
+        downcase,
+    ]
 
     def __init__(self, **exchange_kwargs):
         super(MetaClient, self).__init__()
@@ -60,25 +65,42 @@ class MetaClient(object):
 
             self.helpers[exchange] = HelperClass(**kwargs)
 
+    def _standardize_item(self, item):
+        for processor in self.DATA_PROCESSORS:
+            item = processor(item)
 
-    @downcase
-    def ticker(self, exchange, pairs):
+        return item
+
+    def standardize(self, data):
+        datatype = type(data)
+
+        if datatype is list:
+            return [self._standardize_item(item) for item in data]
+        elif datatype is tuple:
+            return (self._standardize_item(item) for item in data)
+        elif datatype is dict:
+            return {
+                self.standardize(key): self.standardize(value)
+                for key, value in data.iteritems()
+            }
+
+        return self._standardize_item(data)
+
+
+    def ticker(self, exchange):
         """
-        Given an exchange, returns the ticker for the pairs given
+        Given an exchange, returns the ticker for all trading pairs
         """
         helper = self.helpers[exchange]
+        data = helper.get_ticker()
 
-        return helper.get_ticker(pairs)
+        return self.standardize(data)
 
-    @downcase
-    def pairs(self, exchange, pairs):
+    def pairs(self, exchange):
         """
-        Given an exchange, returns the ticker for the pairs given
+        Given an exchange, returns all trading pairs
         """
         helper = self.helpers[exchange]
+        data = helper.get_pairs()
 
-        return helper.get_pairs(pairs)
-
-
-# Overlays for each supported client
-
+        return self.standardize(data)

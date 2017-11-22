@@ -1,12 +1,15 @@
-import unittest
+from mock import patch
+from unittest import TestCase
 
-from clients.client import downcase, DowncaseError, MetaClient
+
+from clients.client import downcase, MetaClient
+import fixtures
+from testing import MockLiquiClient, MockPoloniexClient
 
 
-class TestDowncase(unittest.TestCase):
+class TestDowncase(TestCase):
 
     def setUp(self):
-        @downcase
         def my_function(str):
             return str
 
@@ -15,59 +18,74 @@ class TestDowncase(unittest.TestCase):
     def test_lowercases_data(self):
         my_string = 'aBc 1234 $@!#'
         output = self.my_function(my_string)
+        downcased = downcase(output)
 
-        self.assertEqual(output, my_string.lower())
+        self.assertEqual(downcased, my_string.lower())
 
-        my_object = {'Abc': 123, '123': 'aBC'}
-        output = self.my_function(my_object)
+class TestMetaClient(TestCase):
 
-        self.assertDictEqual(output, {'abc': 123, '123': 'abc'})
-
-    def test_failure_raises_error(self):
-        not_downcaseable = lambda x: x
-
-        with self.assertRaises(DowncaseError):
-            self.my_function(not_downcaseable)
-
-
-class TestDowncase(unittest.TestCase):
-
-    def setUp(self):
-        @downcase
-        def my_function(str):
-            return str
-
-        self.my_function = my_function
-
-    def test_lowercases_data(self):
-        my_string = 'aBc 1234 $@!#'
-        output = self.my_function(my_string)
-
-        self.assertEqual(output, my_string.lower())
-
-        my_object = {'Abc': 123, '123': 'aBC'}
-        output = self.my_function(my_object)
-
-        self.assertDictEqual(output, {'abc': 123, '123': 'abc'})
-
-    def test_failure_raises_error(self):
-        not_downcaseable = lambda x: x
-
-        with self.assertRaises(DowncaseError):
-            self.my_function(not_downcaseable)
-
-
-class TestMetaClient(unittest.TestCase):
-
-    def setUp(self):
+    @patch('liqui.Liqui')
+    @patch('poloniex.Poloniex')
+    def setUp(self, mockPoloniex, mockLiqui):
+        self.maxDiff = None
         self.kwargs = {'liqui': {}, 'poloniex': {}}
+        self.client = MetaClient(**self.kwargs)
+        self.client.helpers['liqui'].client = MockLiquiClient()
+        self.client.helpers['poloniex'].client = MockPoloniexClient()
 
     def test_init(self):
-        client = MetaClient(**self.kwargs)
-        self.assertEqual(len(client.helpers), 2)
+        self.assertEqual(len(self.client.helpers), 2)
 
     def test_init_unsupported_exchange(self):
         self.kwargs['unsupported'] = {}
 
         with self.assertRaisesRegexp(NotImplementedError, 'unsupported is not implemented!'):
             MetaClient(**self.kwargs)
+
+    def test_liqui_ticker(self):
+        bmc_usdt = {
+            'last': 0.6220695,
+            'lowest_ask': 0.62508059,
+            'highest_bid': 0.61905832,
+            'base_volume': 81296.8647402806507957,
+            'current_volume': 131309.57718612,
+            'high': 0.64828129,
+            'low': 0.58545808,
+            'updated': 1510788150,
+            'average': 0.616869685,
+        }
+        self.assertDictEqual(
+            bmc_usdt,
+            self.client.ticker('liqui')['usdt_bmc']
+        )
+
+    def test_poloniex_ticker(self):
+        btc_bcn = {
+            'id': 7,
+            'last': '0.00000017',
+            'lowest_ask': '0.00000017',
+            'highest_bid': '0.00000016',
+            'percent_change': '0.00000000',
+            'base_volume': '26.85861414',
+            'quote_volume': '163214330.95054007',
+            'is_frozen': '0',
+            'high': '0.00000018',
+            'low': '0.00000016',
+        }
+        data = self.client.ticker('poloniex')
+        self.assertDictEqual(
+            btc_bcn,
+            data['btc_bcn']
+        )
+
+    def test_liqui_pairs(self):
+        pair = ('btc', 'ltc')
+        data = self.client.pairs('liqui')
+
+        self.assertIn(pair, data)
+
+    def test_poloniex_pairs(self):
+        pair = ('btc', 'ltc')
+        data = self.client.pairs('poloniex')
+
+        self.assertIn(pair, data)
