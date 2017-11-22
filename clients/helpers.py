@@ -50,6 +50,8 @@ def sorted_by_fiat(currencies, fiat_order=None):
         raise NotImplementedError
 
     [a, b] = currencies
+    a = a.lower()
+    b = b.lower()
     a_index, b_index = get_fiat_order(a, fiat_order), get_fiat_order(b, fiat_order)
 
     if b_index is None:
@@ -62,14 +64,17 @@ def sorted_by_fiat(currencies, fiat_order=None):
         return b, a
 
 
-def sort_pair_by_fiat(currency_pair, fiat_order=None):
+def sort_pair_by_fiat(currency_pair, split_character=None, fiat_order=None):
     """
     Orders a currency pair according to the order provided.
 
     Exchanges do not agree which currency should come first in a pair, e.g. usdt-btc or btc-usdt.
     Returns a pair (or any array) sorted according to fiat_order.
     """
-    currencies = currency_pair.lower().split(SPLIT_CHARACTER)
+    if split_character is None:
+        split_character = SPLIT_CHARACTER
+
+    currencies = currency_pair.split(split_character)
 
     return sorted_by_fiat(currencies, fiat_order)
 
@@ -112,7 +117,7 @@ class ClientHelper(object):
 
     def _from_client_pair(self, pair):
         # translates a pair from its format to `Mediator` format
-        return sort_pair_by_fiat(pair)
+        return sort_pair_by_fiat(pair, split_character=self.SPLIT_CHARACTER)
 
     def _to_client_pair(self, pair):
         # translates a pair from `Mediator` format to its own client format
@@ -135,10 +140,14 @@ class ClientHelper(object):
         return pair.split(character)
 
     def mediator_pair(self, pair):
-        return self.SPLIT_CHARACTER.join(sorted_by_fiat(self._to_fiat_currency(pair)))
+        return SPLIT_CHARACTER.join(sorted_by_fiat(self._to_fiat_currency(pair)))
 
 
 class BittrexClientHelper(ClientHelper):
+    """
+    [u'PrevDay', u'Volume', u'Last', u'OpenSellOrders', u'TimeStamp', u'Bid', u'Created', u'OpenBuyOrders', u'High',
+     u'MarketName', u'Low', u'Ask', u'BaseVolume']
+    """
     TICKER_MAP = {
         'Last': 'last',
         'Bid': 'highest_bid',
@@ -155,14 +164,14 @@ class BittrexClientHelper(ClientHelper):
     SPLIT_CHARACTER = '-'
 
     def get_ticker(self):
-        ticker_response = self.client.get_ticker()
+        ticker_response = self.client.get_market_summaries()
 
         if not ticker_response['success']:
             raise ClientError(ticker_response['message'])
 
         ticker = {}
 
-        for entry in ticker_response:
+        for entry in ticker_response['result']:
             client_pair = entry.pop('MarketName')
             ticker[self.mediator_pair(client_pair)] = rename_keys(entry, self.TICKER_MAP)
 

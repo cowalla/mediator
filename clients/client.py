@@ -10,25 +10,6 @@ def downcase(data):
     except:
         return data
 
-    if isinstance(data, basestring):
-        return data.lower()
-    elif isinstance(data, int) or isinstance(data, float):
-        return data
-
-    datatype = type(data)
-
-    if datatype is list:
-        return [downcase(item) for item in data]
-    elif datatype is tuple:
-        return (downcase(item) for item in data)
-    elif datatype is dict:
-        return {
-            downcase(k): downcase(v)
-            for k, v in data.iteritems()
-        }
-    else:
-        raise NotImplementedError('cannot downcase data type %s' % datatype)
-
 
 class MetaClient(object):
     """
