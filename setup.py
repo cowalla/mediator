@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name = "crypto_mediator",
-    version = "0.0.1",
+    version = "0.1.0",
     author = "Connor Wallace",
     author_email = "wallaconno@gmail.com",
     description = ('Client that allows communication between many crypto exchanges'),
@@ -16,7 +16,7 @@ setup(
         'backports.functools-lru-cache==1.4',
         'backports.ssl-match-hostname==3.5.0.1',
         'bintrees==2.0.7',
-        'python-bittrex==0.2.1',
+        'python-bittrex',
         'certifi==2017.11.5',
         'chardet==3.0.4',
         'configparser==3.5.0',
@@ -43,7 +43,7 @@ setup(
         'wrapt==1.10.11',
     ],
     dependency_links=[
-        'git+https://github.com/ericsomdahl/python-bittrex.git',
-        'git+https://github.com/s4w3d0ff/python-poloniex.git',
+        'https://github.com/ericsomdahl/python-bittrex',
+        'https://github.com/s4w3d0ff/python-poloniex',
     ]
 )

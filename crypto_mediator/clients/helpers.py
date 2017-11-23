@@ -3,7 +3,7 @@ from gdax import AuthenticatedClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from exchange_mediator.settings import FIATS, SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
+from crypto_mediator.settings import FIATS, SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
 
 
 class ClientError(AttributeError):

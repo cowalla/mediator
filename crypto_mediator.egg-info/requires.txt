@@ -2,7 +2,7 @@ astroid==1.5.3
 backports.functools-lru-cache==1.4
 backports.ssl-match-hostname==3.5.0.1
 bintrees==2.0.7
-python-bittrex==0.2.1
+python-bittrex
 certifi==2017.11.5
 chardet==3.0.4
 configparser==3.5.0
@@ -16,7 +16,7 @@ liqui==1.0.1
 mccabe==0.6.1
 mock==2.0.0
 pbr==3.1.1
-python-poloniex==0.4.6
+python-poloniex
 py==1.5.1
 pylint==1.7.4
 pytest==3.2.5

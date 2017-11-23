@@ -1,9 +1,9 @@
 import json
 
-from exchange_mediator.clients.helpers import (
+from crypto_mediator.clients.helpers import (
     BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 )
-from exchange_mediator.settings import BITTREX, GDAX, LIQUI, POLONIEX
+from crypto_mediator.settings import BITTREX, GDAX, LIQUI, POLONIEX
 
 
 def downcase(data):
