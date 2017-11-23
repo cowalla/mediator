@@ -1,7 +1,13 @@
 ### Getting started
 
+pip install <mediator_tarball>
+
+also install these requirements
+- https://github.com/s4w3d0ff/python-poloniex/archive/v0.4.6.zip
+- git+https://github.com/ericsomdahl/python-bittrex.git
+
 - install the requirements: `pip install -r requirements.txt`
-- import the metaclient into your project, `from mediator.clients.client import MetaClient`
+- import the metaclient into your project, `from crypto_mediator import CryptoMediator`
 
 
 ### Adding new exchanges to the MetaClient
@@ -17,4 +23,3 @@
 
 ### example shell
 - `python example.py`
-
