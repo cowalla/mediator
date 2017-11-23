@@ -1,9 +1,9 @@
 from copy import deepcopy
 from mock import Mock
 
-from fixtures.bittrex import getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
-from fixtures.liqui import info as liqui_info, ticker as liqui_ticker
-from fixtures.poloniex import (
+from crypto_mediator.fixtures.bittrex import getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
+from crypto_mediator.fixtures.liqui import info as liqui_info, ticker as liqui_ticker
+from crypto_mediator.fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
 

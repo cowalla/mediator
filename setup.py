@@ -30,7 +30,6 @@ setup(
         'mccabe==0.6.1',
         'mock==2.0.0',
         'pbr==3.1.1',
-        'python-poloniex==0.4.6',
         'py==1.5.1',
         'pylint==1.7.4',
         'pytest==3.2.5',
@@ -43,7 +42,7 @@ setup(
         'wrapt==1.10.11',
     ],
     dependency_links=[
-        'https://github.com/ericsomdahl/python-bittrex',
+        'git+https://github.com/ericsomdahl/python-bittrex',
         'https://github.com/s4w3d0ff/python-poloniex',
     ]
 )

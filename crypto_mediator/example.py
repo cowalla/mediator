@@ -1,4 +1,4 @@
-from clients.client import MetaClient
+from crypto_mediator.clients.client import MetaClient
 
 
 kwargs = {'liqui': {}, 'poloniex': {}, 'bittrex': {'api_key': None, 'api_secret': None}}
