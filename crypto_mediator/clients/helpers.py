@@ -164,10 +164,6 @@ class BittrexClientHelper(ClientHelper):
     SPLIT_CHARACTER = '-'
 
     def get_ticker(self):
-        from fixtures.bittrex import getmarketsummaries
-        entry = getmarketsummaries.response['result'][0]
-        print entry
-
         ticker_response = self.client.get_market_summaries()
 
         if not ticker_response['success']:

@@ -10,13 +10,18 @@ setup(
     license = "MIT",
     keywords = "cryptocurrency client",
     url = "http://www.github.com/cowalla/mediator",
-    packages=['crypto_mediator'],
+    packages=[
+        ''
+        'crypto_mediator',
+        'crypto_mediator.clients',
+        'crypto_mediator.fixtures',
+        'crypto_mediator.clients.tests',
+    ],
     install_requires=[
         'astroid==1.5.3',
         'backports.functools-lru-cache==1.4',
         'backports.ssl-match-hostname==3.5.0.1',
         'bintrees==2.0.7',
-        'python-bittrex',
         'certifi==2017.11.5',
         'chardet==3.0.4',
         'configparser==3.5.0',
