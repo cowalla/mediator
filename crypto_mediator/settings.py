@@ -1,12 +1,14 @@
 # fiat ticker names
 BITCOIN = 'btc'
 ETHEREUM = 'eth'
+USD = 'usd'
 USDT = 'usdt'
 LTC = 'ltc'
 DASH = 'dash'
 ZCASH = 'zec'
 
 FIATS = [
+    USD,
     USDT,
     BITCOIN,
     ETHEREUM,

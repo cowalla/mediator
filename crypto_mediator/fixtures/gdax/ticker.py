@@ -20,4 +20,4 @@ def response(id):
         'btc-usd': btc_usd_response,
         'eth-usd': eth_usd_response,
         'ltc-usd': ltc_usd_response,
-    }
+    }.get(id.lower(), {})

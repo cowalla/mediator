@@ -100,49 +100,48 @@ class TestBittrexClient(unittest.TestCase):
 
 
 
-# class TestGDAXClient(unittest.TestCase):
-#
-#     @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
-#     def setUp(self):
-#         self.credentials = {}
-#         self.helper = GDAXClientHelper(**self.credentials)
-#
-#     def test_init(self):
-#         self.assertIn('usdt_eth', self.helper.pairs)
-#         self.assertIn('btc_ltc', self.helper.pairs)
-#
-#         self.assertListEqual(self.helper.fiats, ['usdt', 'eth', 'btc'])
-#         self.assertIn('omg', self.helper.currencies)
-#
-#     def test_get_pairs(self):
-#         pairs = self.helper.get_pairs()
-#
-#         self.assertIn('usdt_eth', pairs)
-#         self.assertIn('btc_ltc', pairs)
-#
-#     def test_get_currencies(self):
-#         currencies = self.helper.get_currencies()
-#
-#         self.assertIn('usdt', currencies)
-#         self.assertIn('btc', currencies)
-#         self.assertIn('omg', currencies)
-#
-#     def test_get_ticker(self):
-#         ticker_info = self.helper.get_ticker()
-#         keys = [
-#             'last',
-#             'lowest_ask',
-#             'highest_bid',
-#             'base_volume',
-#             'current_volume',
-#             'high',
-#             'low',
-#             'updated',
-#         ]
-#         self.assertIn('btc_omg', ticker_info)
-#         ticker_example = ticker_info['btc_omg']
-#
-#         self.assertListEqual(sorted(ticker_example.keys()), sorted(keys))
+class TestGDAXClient(unittest.TestCase):
+
+    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
+    def setUp(self):
+        self.credentials = {}
+        self.helper = GDAXClientHelper(**self.credentials)
+
+    def test_init(self):
+        self.assertIn('usd_eth', self.helper.pairs)
+        self.assertIn('btc_ltc', self.helper.pairs)
+
+        self.assertListEqual(self.helper.fiats, ['ltc', 'eth', 'usd', 'btc'])
+        self.assertIn('ltc', self.helper.currencies)
+
+    def test_get_pairs(self):
+        pairs = self.helper.get_pairs()
+
+        self.assertIn('usd_eth', pairs)
+        self.assertIn('btc_ltc', pairs)
+
+    def test_get_currencies(self):
+        currencies = self.helper.get_currencies()
+
+        self.assertIn('usd', currencies)
+        self.assertIn('btc', currencies)
+
+    def test_get_product_ticker(self):
+        btc_eth_ticker = self.helper.get_product_ticker('btc_eth')
+
+        self.assertDictEqual(
+            btc_eth_ticker,
+            {
+                'highest_bid': '0.05396',
+                'lowest_ask': '0.05397',
+                'current_volume': '62778.70074449',
+                'updated': '2017-11-25T20:55:50.641000Z'
+            }
+        )
+
+    def test_get_ticker(self):
+        with self.assertRaises(NotImplementedError):
+            self.helper.get_ticker()
 
 
 class TestLiquiClient(unittest.TestCase):

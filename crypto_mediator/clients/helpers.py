@@ -211,6 +211,33 @@ class BittrexClientHelper(ClientHelper):
             for r in markets_response['result']
         ]
 
+class GDAXClientHelper(ClientHelper):
+    # unlikely to be used in the future
+    NAME = GDAX
+    CLIENT_CLASS = GDAXClient
+    TICKER_MAP = {
+        'bid': 'highest_bid',
+        'ask': 'lowest_ask',
+        'volume': 'current_volume',
+        'time': 'updated',
+    }
+    SPLIT_CHARACTER = '-'
+
+    def get_currencies(self):
+        return [p['id'].lower() for p in self.client.get_currencies()]
+
+    def get_ticker(self):
+        raise NotImplementedError('API does not allow polling for all pairs')
+
+    def get_product_ticker(self, pair):
+        client_pair = self.pair_map[pair]
+        response = self.client.get_product_ticker(client_pair)
+
+        return rename_keys(response, self.TICKER_MAP)
+
+    def _get_client_pairs(self):
+        return [p['id'] for p in self.client.get_products()]
+
 
 class LiquiClientHelper(ClientHelper):
     TICKER_MAP = {
@@ -280,23 +307,3 @@ class PoloniexClientHelper(ClientHelper):
 
     def _get_client_pairs(self):
         return self.get_ticker().keys()
-
-
-class GDAXClientHelper(ClientHelper):
-    # unlikely to be used in the future
-    NAME = GDAX
-    CLIENT_CLASS = GDAXClient
-
-    def get_currencies(self):
-        return self.client.get_currencies()
-
-    def get_ticker(self):
-        raise NotImplementedError('API does not allow polling for all pairs')
-
-    def get_product_ticker(self, pair):
-        client_pair = self.pair_map[pair]
-
-        return self.client.get_product_ticker(client_pair)
-
-    def _get_client_pairs(self):
-        return self.client.get_products()
