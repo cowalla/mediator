@@ -85,10 +85,7 @@ class MetaClient(object):
             for pair in response
         ]
 
-    def ticker(self, exchange):
-        """
-        Given an exchange, returns the ticker for all trading pairs
-        """
+    def _in_ticker_format(self, entry):
         FIELDS = [
             ('average', float),
             ('base_volume', float),
@@ -104,13 +101,32 @@ class MetaClient(object):
             ('quote_volume', float),
             ('updated', timestamp),
         ]
+
+        for field, fieldtype in FIELDS:
+            value = entry.get(field)
+
+            if value is not None:
+                entry[field] = fieldtype(value)
+
+        return entry
+
+
+
+    def ticker(self, exchange):
+        """
+        Given an exchange, returns the ticker for all trading pairs
+        """
         response = self.request(exchange, 'get_ticker')
 
         for pair, ticker in response.iteritems():
-            for field, fieldtype in FIELDS:
-                value = ticker.get(field)
-
-                if value is not None:
-                    ticker[field] = fieldtype(value)
+            response[pair] = self._in_ticker_format(ticker)
 
         return response
+
+    def product_ticker(self, exchange, pair):
+        try:
+            response = self.request(exchange, 'get_product_ticker', pair)
+
+            return self._in_ticker_format(response)
+        except NotImplementedError:
+            return self.ticker(exchange)[pair]

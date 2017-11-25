@@ -66,6 +66,18 @@ class TestMetaClient(TestCase):
         with self.assertRaises(NotImplementedError):
             self.client.ticker('gdax')
 
+        eth_btc = self.client.product_ticker('gdax', 'btc_eth')
+        self.assertDictEqual(
+            eth_btc,
+            {
+                'current_volume': 62778.70074449,
+                'highest_bid': 0.05396,
+                'lowest_ask': 0.05397,
+                'updated': 1511672150.0,
+            }
+        )
+
+
     def test_liqui_ticker(self):
         bmc_usdt = {
             'last': 0.6220695,

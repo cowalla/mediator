@@ -230,6 +230,7 @@ class GDAXClientHelper(ClientHelper):
         raise NotImplementedError('API does not allow polling for all pairs')
 
     def get_product_ticker(self, pair):
+        print self.pair_map
         client_pair = self.pair_map[pair]
         response = self.client.get_product_ticker(client_pair)
 
