@@ -2,8 +2,10 @@ from mock import patch
 from unittest import TestCase
 
 from crypto_mediator.clients.client import downcased, MetaClient
-from crypto_mediator.clients.helpers import BittrexClientHelper, LiquiClientHelper, PoloniexClientHelper
-from crypto_mediator.testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
+from crypto_mediator.clients.helpers import (
+    BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+)
+from crypto_mediator.testing import MockBittrexClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient
 
 
 class TestDowncased(TestCase):
@@ -18,17 +20,24 @@ class TestDowncased(TestCase):
 class TestMetaClient(TestCase):
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
     def setUp(self):
         self.maxDiff = None
-        self.kwargs = {'liqui': {}, 'poloniex': {}, 'bittrex': {'api_key': None, 'api_secret': None}}
+        self.kwargs = {
+            'liqui': {},
+            'poloniex': {},
+            'bittrex': {'api_key': None, 'api_secret': None},
+            'gdax': {},
+        }
         self.client = MetaClient(**self.kwargs)
 
     def test_init(self):
-        self.assertEqual(len(self.client.helpers), 3)
+        self.assertEqual(len(self.client.helpers), 4)
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
     def test_init_unsupported_exchange(self):
@@ -52,6 +61,10 @@ class TestMetaClient(TestCase):
             btc_1st,
             self.client.ticker('bittrex')['btc_1st']
         )
+
+    def test_gdax_ticker(self):
+        with self.assertRaises(NotImplementedError):
+            self.client.ticker('gdax')
 
     def test_liqui_ticker(self):
         bmc_usdt = {
@@ -88,6 +101,18 @@ class TestMetaClient(TestCase):
             btc_bcn,
             data['btc_bcn']
         )
+
+    def test_bittrex_pairs(self):
+        pair = 'btc_ltc'
+        data = self.client.pairs('bittrex')
+
+        self.assertIn(pair, data)
+
+    def test_gdax_pairs(self):
+        pair = 'btc_ltc'
+        data = self.client.pairs('gdax')
+
+        self.assertIn(pair, data)
 
     def test_liqui_pairs(self):
         pair = 'btc_ltc'
