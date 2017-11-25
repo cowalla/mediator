@@ -1,9 +1,9 @@
 from bittrex.bittrex import Bittrex as BittrexClient
-from gdax import AuthenticatedClient as GDAXClient
+from gdax import PublicClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from crypto_mediator.settings import FIATS, SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
+from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
 
 
 class ClientError(AttributeError):
@@ -72,11 +72,12 @@ def sort_pair_by_fiat(currency_pair, split_character=None, fiat_order=None):
     Returns a pair (or any array) sorted according to fiat_order.
     """
     if split_character is None:
-        split_character = SPLIT_CHARACTER
+        split_character = MEDIATOR_SPLIT_CHARACTER
 
     currencies = currency_pair.split(split_character)
+    sorted_pair = sorted_by_fiat(currencies, fiat_order)
 
-    return sorted_by_fiat(currencies, fiat_order)
+    return MEDIATOR_SPLIT_CHARACTER.join(sorted_pair)
 
 class ClientHelper(object):
     NAME = None
@@ -101,7 +102,7 @@ class ClientHelper(object):
             for p in self.client_pairs
         }
         self.pairs = sorted(self.pair_map.keys())
-        self.fiats = self._get_fiats_from_pairs(self.pairs)
+        self.fiats = self._get_fiats_from_mediator_pairs(self.pairs)
         self.currencies = self.get_currencies()
 
     def get_currencies(self):
@@ -123,30 +124,40 @@ class ClientHelper(object):
         # translates a pair from `Mediator` format to its own client format
         return self.pair_map[pair]
 
-    def _get_fiats_from_pairs(self, pairs):
-        flat = flatten([pair[0] for pair in pairs])
+    def _get_fiats_from_mediator_pairs(self, pairs):
+        fiats = set([pair.split(MEDIATOR_SPLIT_CHARACTER)[0] for pair in pairs])
+
+        return list(fiats)
+
+    def _get_currencies_from_mediator_pairs(self, pairs):
+        flat = flatten([pair.split(MEDIATOR_SPLIT_CHARACTER) for pair in pairs])
 
         return list(set(flat))
-
-    def _get_currencies_from_pairs(self, pairs):
-        flat = flatten(pairs)
-
-        return list(set(flat))
-
-    def _to_fiat_currency(self, pair, character=None):
-        if character is None:
-            character = self.SPLIT_CHARACTER
-
-        return pair.split(character)
 
     def mediator_pair(self, pair):
-        return SPLIT_CHARACTER.join(sorted_by_fiat(self._to_fiat_currency(pair)))
+        fiat_currency = pair.split(self.SPLIT_CHARACTER)
+
+        return MEDIATOR_SPLIT_CHARACTER.join(sorted_by_fiat(fiat_currency))
 
 
 class BittrexClientHelper(ClientHelper):
     """
-    [u'PrevDay', u'Volume', u'Last', u'OpenSellOrders', u'TimeStamp', u'Bid', u'Created', u'OpenBuyOrders', u'High',
-     u'MarketName', u'Low', u'Ask', u'BaseVolume']
+    client ticker keys:
+        [
+            u'PrevDay',
+            u'Volume',
+            u'Last',
+            u'OpenSellOrders',
+            u'TimeStamp',
+            u'Bid',
+            u'Created',
+            u'OpenBuyOrders',
+            u'High',
+            u'MarketName',
+            u'Low',
+            u'Ask',
+            u'BaseVolume',
+        ]
     """
     TICKER_MAP = {
         'Last': 'last',
@@ -173,14 +184,24 @@ class BittrexClientHelper(ClientHelper):
 
         for entry in ticker_response['result']:
             client_pair = entry.pop('MarketName')
-            ticker[self.mediator_pair(client_pair)] = rename_keys(entry, self.TICKER_MAP)
+            mediator_pair = self.mediator_pair(client_pair)
+
+            ticker[mediator_pair] = rename_keys(entry, self.TICKER_MAP)
 
         return ticker
 
     def get_currencies(self):
         pairs = self.get_pairs()
 
-        return self._get_currencies_from_pairs(pairs)
+        return self._get_currencies_from_mediator_pairs(pairs)
+
+    def get_pairs(self):
+        client_pairs = self._get_client_pairs()
+
+        return [
+            self.mediator_pair(pair)
+            for pair in client_pairs
+        ]
 
     def _get_client_pairs(self):
         markets_response = self.client.get_markets()
@@ -223,7 +244,7 @@ class LiquiClientHelper(ClientHelper):
     def get_currencies(self):
         pairs = self.get_pairs()
 
-        return self._get_currencies_from_pairs(pairs)
+        return self._get_currencies_from_mediator_pairs(pairs)
 
     def _get_client_pairs(self):
         return self.client.info()['pairs'].keys()
@@ -270,7 +291,12 @@ class GDAXClientHelper(ClientHelper):
         return self.client.get_currencies()
 
     def get_ticker(self):
-        return self.client.get_product_ticker()
+        raise NotImplementedError('API does not allow polling for all pairs')
+
+    def get_product_ticker(self, pair):
+        client_pair = self.pair_map[pair]
+
+        return self.client.get_product_ticker(client_pair)
 
     def _get_client_pairs(self):
         return self.client.get_products()

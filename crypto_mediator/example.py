@@ -1,7 +1,12 @@
 from crypto_mediator.clients.client import MetaClient
 
 
-kwargs = {'liqui': {}, 'poloniex': {}, 'bittrex': {'api_key': None, 'api_secret': None}}
+kwargs = {
+    'liqui': {},
+    'poloniex': {},
+    'bittrex': {'api_key': None, 'api_secret': None},
+    'gdax': {}
+}
 client = MetaClient(**kwargs)
 
 

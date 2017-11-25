@@ -20,6 +20,7 @@ https://github.com/s4w3d0ff/python-poloniex/archive/v0.4.6.zip
 py==1.5.1
 pylint==1.7.4
 pytest==3.2.5
+python-dateutil
 requests==2.7.0
 singledispatch==3.4.0.3
 six==1.10.0

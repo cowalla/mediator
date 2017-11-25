@@ -1,4 +1,5 @@
-import json
+import time
+from dateutil.parser import parse
 
 from crypto_mediator.clients.helpers import (
     BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
@@ -6,11 +7,19 @@ from crypto_mediator.clients.helpers import (
 from crypto_mediator.settings import BITTREX, GDAX, LIQUI, POLONIEX
 
 
-def downcase(data):
+def downcased(string):
+    return str(string).lower()
+
+
+def timestamp(data):
     try:
-        return data.lower()
+        return float(data)
     except:
-        return data
+        pass
+
+    parsed = parse(data)
+
+    return time.mktime(parsed.timetuple())
 
 
 class MetaClient(object):
@@ -31,10 +40,6 @@ class MetaClient(object):
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,
     }
-    # Actions to take on all individual entries in a response
-    DATA_PROCESSORS = [
-        downcase,
-    ]
 
     def __init__(self, **exchange_kwargs):
         super(MetaClient, self).__init__()
@@ -49,42 +54,63 @@ class MetaClient(object):
 
             self.helpers[exchange] = HelperClass(**kwargs)
 
-    def _standardize_item(self, item):
-        for processor in self.DATA_PROCESSORS:
-            item = processor(item)
-
-        return item
-
-    def standardize(self, data):
-        datatype = type(data)
-
-        if datatype is list:
-            return [self._standardize_item(item) for item in data]
-        elif datatype is tuple:
-            return (self._standardize_item(item) for item in data)
-        elif datatype is dict:
-            return {
-                self.standardize(key): self.standardize(value)
-                for key, value in data.iteritems()
-            }
-
-        return self._standardize_item(data)
-
-
-    def ticker(self, exchange):
-        """
-        Given an exchange, returns the ticker for all trading pairs
-        """
+    def request(self, exchange, endpoint, *args, **kwargs):
         helper = self.helpers[exchange]
-        data = helper.get_ticker()
+        helper_function = getattr(helper, endpoint)
 
-        return self.standardize(data)
+        if not helper_function:
+            raise NotImplementedError('Helper function "{}" for exchange "{}" not found!'.format(endpoint, exchange))
+
+        return helper_function(*args, **kwargs)
+
+    def currencies(self, exchange):
+        """
+        Given an exchange, returns all currencies on that exchange
+        """
+        response = self.request(exchange, 'get_currencies')
+
+        return [
+            downcased(currency)
+            for currency in response
+        ]
 
     def pairs(self, exchange):
         """
         Given an exchange, returns all trading pairs
         """
-        helper = self.helpers[exchange]
-        data = helper.get_pairs()
+        response = self.request(exchange, 'get_pairs')
 
-        return self.standardize(data)
+        return [
+            downcased(pair)
+            for pair in response
+        ]
+
+    def ticker(self, exchange):
+        """
+        Given an exchange, returns the ticker for all trading pairs
+        """
+        FIELDS = [
+            ('average', float),
+            ('base_volume', float),
+            ('current_volume', float),
+            ('high', float),
+            ('highest_bid', float),
+            ('id', int),
+            ('is_frozen', int),
+            ('last', float),
+            ('low', float),
+            ('lowest_ask', float),
+            ('percent_change', float),
+            ('quote_volume', float),
+            ('updated', timestamp),
+        ]
+        response = self.request(exchange, 'get_ticker')
+
+        for pair, ticker in response.iteritems():
+            for field, fieldtype in FIELDS:
+                value = ticker.get(field)
+
+                if value is not None:
+                    ticker[field] = fieldtype(value)
+
+        return response

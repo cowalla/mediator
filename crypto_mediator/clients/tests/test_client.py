@@ -1,42 +1,36 @@
 from mock import patch
 from unittest import TestCase
 
-from crypto_mediator.clients.client import downcase, MetaClient
+from crypto_mediator.clients.client import downcased, MetaClient
+from crypto_mediator.clients.helpers import BittrexClientHelper, LiquiClientHelper, PoloniexClientHelper
 from crypto_mediator.testing import MockBittrexClient, MockLiquiClient, MockPoloniexClient
 
 
-class TestDowncase(TestCase):
-
-    def setUp(self):
-        def my_function(str):
-            return str
-
-        self.my_function = my_function
+class TestDowncased(TestCase):
 
     def test_lowercases_data(self):
         my_string = 'aBc 1234 $@!#'
-        output = self.my_function(my_string)
-        downcased = downcase(output)
+        downcase = downcased(my_string)
 
-        self.assertEqual(downcased, my_string.lower())
+        self.assertEqual(downcase, my_string.lower())
 
 
-# TODO: mock clients correctly
 class TestMetaClient(TestCase):
 
-    @patch('liqui.Liqui')
-    @patch('poloniex.Poloniex')
-    def setUp(self, mockPoloniex, mockLiqui):
+    @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
+    @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
+    def setUp(self):
         self.maxDiff = None
         self.kwargs = {'liqui': {}, 'poloniex': {}, 'bittrex': {'api_key': None, 'api_secret': None}}
         self.client = MetaClient(**self.kwargs)
-        self.client.helpers['bittrex'].client = MockBittrexClient()
-        self.client.helpers['liqui'].client = MockLiquiClient()
-        self.client.helpers['poloniex'].client = MockPoloniexClient()
 
     def test_init(self):
         self.assertEqual(len(self.client.helpers), 3)
 
+    @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
+    @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
     def test_init_unsupported_exchange(self):
         self.kwargs['unsupported'] = {}
 
@@ -52,7 +46,7 @@ class TestMetaClient(TestCase):
             'current_volume': 2241173.71259967,
             'high': 0.00004996,
             'low': 0.00004201,
-            'updated': '2017-11-22t20:41:49.297',
+            'updated': 1511412109.0,
         }
         self.assertDictEqual(
             btc_1st,
@@ -79,15 +73,15 @@ class TestMetaClient(TestCase):
     def test_poloniex_ticker(self):
         btc_bcn = {
             'id': 7,
-            'last': '0.00000017',
-            'lowest_ask': '0.00000017',
-            'highest_bid': '0.00000016',
-            'percent_change': '0.00000000',
-            'base_volume': '26.85861414',
-            'quote_volume': '163214330.95054007',
-            'is_frozen': '0',
-            'high': '0.00000018',
-            'low': '0.00000016',
+            'last': 0.00000017,
+            'lowest_ask': 0.00000017,
+            'highest_bid': 0.00000016,
+            'percent_change': 0.00000000,
+            'base_volume': 26.85861414,
+            'quote_volume': 163214330.95054007,
+            'is_frozen': 0,
+            'high': 0.00000018,
+            'low': 0.00000016,
         }
         data = self.client.ticker('poloniex')
         self.assertDictEqual(
@@ -96,13 +90,13 @@ class TestMetaClient(TestCase):
         )
 
     def test_liqui_pairs(self):
-        pair = ('btc', 'ltc')
+        pair = 'btc_ltc'
         data = self.client.pairs('liqui')
 
         self.assertIn(pair, data)
 
     def test_poloniex_pairs(self):
-        pair = ('btc', 'ltc')
+        pair = 'btc_ltc'
         data = self.client.pairs('poloniex')
 
         self.assertIn(pair, data)

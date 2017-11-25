@@ -16,7 +16,7 @@ FIATS = [
 ]
 
 # character that splits currency pairs. "fiat<split>currency"
-SPLIT_CHARACTER = '_'
+MEDIATOR_SPLIT_CHARACTER = '_'
 
 # supported exchanges
 BITTREX = 'bittrex'
