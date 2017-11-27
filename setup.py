@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name = "crypto_mediator",
-    version = "0.3.0",
+    version = "0.4.0",
     author = "Connor Wallace",
     author_email = "wallaconno@gmail.com",
     description = ('Client that allows communication between many crypto exchanges'),

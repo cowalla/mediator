@@ -12,5 +12,5 @@ man/
 secret.py
 
 dist/
-Mediator.egg-info/
+crypto_mediator.egg-info/
 
