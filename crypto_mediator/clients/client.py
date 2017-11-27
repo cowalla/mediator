@@ -110,8 +110,6 @@ class MetaClient(object):
 
         return entry
 
-
-
     def ticker(self, exchange):
         """
         Given an exchange, returns the ticker for all trading pairs
