@@ -4,6 +4,7 @@ from mock import Mock
 from crypto_mediator.fixtures.bittrex import (
     getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
 )
+from crypto_mediator.fixtures.gatecoin import livetickers as gatecoin_livetickers
 from crypto_mediator.fixtures.gdax import (
     currencies as gdax_currencies, products as gdax_products, ticker as gdax_ticker
 )
@@ -12,9 +13,6 @@ from crypto_mediator.fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
 
-class MockClient(object):
-    def __init__(self, **kwargs):
-        super(MockClient, self).__init__()
 
 class MockBittrexClient(Mock):
 
@@ -23,6 +21,12 @@ class MockBittrexClient(Mock):
 
     def get_market_summaries(self):
         return deepcopy(bittrex_get_market_summaries.response)
+
+
+class MockGatecoinClient(Mock):
+
+    def livetickers(self):
+        return gatecoin_livetickers.response
 
 
 class MockGDAXClient(Mock):

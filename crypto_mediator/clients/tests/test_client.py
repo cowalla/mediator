@@ -3,9 +3,11 @@ from unittest import TestCase
 
 from crypto_mediator.clients.client import downcased, MetaClient
 from crypto_mediator.clients.helpers import (
-    BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 )
-from crypto_mediator.testing import MockBittrexClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient
+from crypto_mediator.testing import (
+    MockBittrexClient, MockGatecoinClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient,
+)
 
 
 class TestDowncased(TestCase):
@@ -20,6 +22,7 @@ class TestDowncased(TestCase):
 class TestMetaClient(TestCase):
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(GatecoinClientHelper, 'CLIENT_CLASS', MockGatecoinClient)
     @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
@@ -30,13 +33,15 @@ class TestMetaClient(TestCase):
             'poloniex': {},
             'bittrex': {'api_key': None, 'api_secret': None},
             'gdax': {},
+            'gatecoin': {}
         }
         self.client = MetaClient(**self.kwargs)
 
     def test_init(self):
-        self.assertEqual(len(self.client.helpers), 4)
+        self.assertEqual(len(self.client.helpers), 5)
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
+    @patch.object(GatecoinClientHelper, 'CLIENT_CLASS', MockGatecoinClient)
     @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
@@ -62,6 +67,24 @@ class TestMetaClient(TestCase):
             self.client.ticker('bittrex')['btc_1st']
         )
 
+    def test_gatecoin_ticker(self):
+        ticker = self.client.ticker('gatecoin')
+
+        btc_rep = ticker['btc_rep']
+        self.assertDictEqual(
+            btc_rep,
+            {
+                'average': 0.0,
+                'last': 0.002775,
+                'lowest_ask': 0.029979,
+                'highest_bid': 0.00051,
+                'base_volume': 0.0,
+                'high': 0.002775,
+                'low': 0.002775,
+                'updated': 1511813522.0,
+            }
+        )
+
     def test_gdax_ticker(self):
         with self.assertRaises(NotImplementedError):
             self.client.ticker('gdax')
@@ -76,7 +99,6 @@ class TestMetaClient(TestCase):
                 'updated': 1511672150.0,
             }
         )
-
 
     def test_liqui_ticker(self):
         bmc_usdt = {
@@ -117,6 +139,12 @@ class TestMetaClient(TestCase):
     def test_bittrex_pairs(self):
         pair = 'btc_ltc'
         data = self.client.pairs('bittrex')
+
+        self.assertIn(pair, data)
+
+    def test_gatecoin_pairs(self):
+        pair = 'btc_ltc'
+        data = self.client.pairs('gatecoin')
 
         self.assertIn(pair, data)
 

@@ -2,15 +2,17 @@ from mock import patch
 import unittest
 
 from crypto_mediator.clients.helpers import (
-    flatten, rename_keys, sort_pair_by_fiat, BittrexClientHelper, GDAXClientHelper, LiquiClientHelper,
-    PoloniexClientHelper,
+    flatten, rename_keys, sort_pair_by_fiat, BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper,
+    LiquiClientHelper, PoloniexClientHelper,
 )
 from crypto_mediator.fixtures.liqui import ticker as liqui_ticker
 from crypto_mediator.fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
 
-from crypto_mediator.testing import MockBittrexClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient
+from crypto_mediator.testing import (
+    MockBittrexClient, MockGatecoinClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient,
+)
 
 
 class TestUtils(unittest.TestCase):
@@ -98,6 +100,49 @@ class TestBittrexClient(unittest.TestCase):
 
         self.assertListEqual(sorted(ticker_example.keys()), sorted(keys))
 
+
+class TestGatecoinClient(unittest.TestCase):
+
+    @patch.object(GatecoinClientHelper, 'CLIENT_CLASS', MockGatecoinClient)
+    def setUp(self):
+        self.credentials = {}
+        self.helper = GatecoinClientHelper(**self.credentials)
+
+    def test_init(self):
+        self.assertIn('usd_eth', self.helper.pairs)
+        self.assertIn('btc_ltc', self.helper.pairs)
+
+        self.assertListEqual(self.helper.fiats, ['ltc', 'eth', 'usd', 'btc'])
+        self.assertIn('ltc', self.helper.currencies)
+
+    def test_get_pairs(self):
+        pairs = self.helper.get_pairs()
+
+        self.assertIn('usd_eth', pairs)
+        self.assertIn('btc_ltc', pairs)
+
+    def test_get_currencies(self):
+        currencies = self.helper.get_currencies()
+
+        self.assertIn('usd', currencies)
+        self.assertIn('btc', currencies)
+
+    def test_get_ticker(self):
+        ticker = self.helper.get_ticker()
+        keys = [
+            'last',
+            'lowest_ask',
+            'highest_bid',
+            'base_volume',
+            'high',
+            'low',
+            'updated',
+            'average',
+        ]
+        self.assertIn('btc_rep', ticker)
+        ticker_example = ticker['btc_rep']
+
+        self.assertListEqual(sorted(ticker_example.keys()), sorted(keys))
 
 
 class TestGDAXClient(unittest.TestCase):

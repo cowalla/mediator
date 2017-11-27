@@ -3,7 +3,8 @@ from gdax import PublicClient as GDAXClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, BITTREX, GDAX, LIQUI, POLONIEX
+from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, BITTREX, GATECOIN, GDAX, LIQUI, POLONIEX
+from crypto_mediator.clients.gatecoin import GatecoinClient
 
 
 class ClientError(AttributeError):
@@ -98,7 +99,7 @@ class ClientHelper(object):
 
         self.client_pairs = sorted(self._get_client_pairs())
         self.pair_map = {
-            self._from_client_pair(p): p
+            self.mediator_pair(p): p
             for p in self.client_pairs
         }
         self.pairs = sorted(self.pair_map.keys())
@@ -111,14 +112,10 @@ class ClientHelper(object):
     def get_pairs(self):
         pairs = self._get_client_pairs()
 
-        return [self._from_client_pair(pair) for pair in pairs]
+        return [self.mediator_pair(pair) for pair in pairs]
 
     def _get_client_pairs(self):
         raise NotImplementedError
-
-    def _from_client_pair(self, pair):
-        # translates a pair from its format to `Mediator` format
-        return sort_pair_by_fiat(pair, split_character=self.SPLIT_CHARACTER)
 
     def _to_client_pair(self, pair):
         # translates a pair from `Mediator` format to its own client format
@@ -211,6 +208,55 @@ class BittrexClientHelper(ClientHelper):
             for r in markets_response['result']
         ]
 
+class GatecoinClientHelper(ClientHelper):
+    NAME = GATECOIN
+    CLIENT_CLASS = GatecoinClient
+    SPLIT_CHARACTER = ''
+
+    TICKER_MAP = {
+        'last': 'last',
+        'bid': 'highest_bid',
+        'ask': 'lowest_ask',
+        'volume': 'base_volume',
+        'high': 'high',
+        'low': 'low',
+        'createDateTime': 'updated',
+        'vwap': 'average',
+    }
+
+    def mediator_pair(self, pair):
+        # I hate you gatecoin
+        fiat = pair[:len(pair)/2]
+        currency = pair[len(pair)/2:]
+        fiat_currency = [fiat, currency]
+
+        return MEDIATOR_SPLIT_CHARACTER.join(sorted_by_fiat(fiat_currency))
+
+    def _get_client_pairs(self):
+        return [t['currencyPair'] for t in self.client.livetickers().get('tickers')]
+
+    def get_currencies(self, use_cache=True):
+        self.pairs = self.get_pairs()
+
+        return self._get_currencies_from_mediator_pairs(self.pairs)
+
+    def get_ticker(self):
+        response = self.client.livetickers().get('tickers')
+
+        if not response:
+            print response
+            raise ClientError('No response from Gatecoin.')
+
+        ticker = {}
+
+        for currency_ticker in response:
+            client_pair = currency_ticker['currencyPair']
+            mediator_pair = self.mediator_pair(client_pair)
+            ticker[mediator_pair] = rename_keys(currency_ticker, self.TICKER_MAP)
+
+        return ticker
+
+
 class GDAXClientHelper(ClientHelper):
     # unlikely to be used in the future
     NAME = GDAX
@@ -230,7 +276,6 @@ class GDAXClientHelper(ClientHelper):
         raise NotImplementedError('API does not allow polling for all pairs')
 
     def get_product_ticker(self, pair):
-        print self.pair_map
         client_pair = self.pair_map[pair]
         response = self.client.get_product_ticker(client_pair)
 

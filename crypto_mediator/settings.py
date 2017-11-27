@@ -22,6 +22,10 @@ MEDIATOR_SPLIT_CHARACTER = '_'
 
 # supported exchanges
 BITTREX = 'bittrex'
+GATECOIN = 'gatecoin'
 GDAX = 'gdax'
 LIQUI = 'liqui'
 POLONIEX = 'poloniex'
+
+# used for unset values
+EMPTY = object()

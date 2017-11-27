@@ -2,9 +2,9 @@ import time
 from dateutil.parser import parse
 
 from crypto_mediator.clients.helpers import (
-    BittrexClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
 )
-from crypto_mediator.settings import BITTREX, GDAX, LIQUI, POLONIEX
+from crypto_mediator.settings import BITTREX, GATECOIN, GDAX, LIQUI, POLONIEX, EMPTY
 
 
 def downcased(string):
@@ -36,6 +36,7 @@ class MetaClient(object):
     """
     HELPER_MAP = {
         BITTREX: BittrexClientHelper,
+        GATECOIN: GatecoinClientHelper,
         GDAX: GDAXClientHelper,
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,
@@ -63,22 +64,37 @@ class MetaClient(object):
 
         return helper_function(*args, **kwargs)
 
-    def currencies(self, exchange):
+    def get_cached_attribute(self, exchange, attr):
+        helper = self.helpers[exchange]
+        value = getattr(helper, attr, EMPTY)
+
+        if value is EMPTY:
+            raise AttributeError('Attribute not found')
+
+        return value
+
+    def currencies(self, exchange, use_cache=True):
         """
         Given an exchange, returns all currencies on that exchange
         """
-        response = self.request(exchange, 'get_currencies')
+        if use_cache:
+            response = self.get_cached_attribute(exchange, 'currencies')
+        else:
+            response = self.request(exchange, 'get_currencies')
 
         return [
             downcased(currency)
             for currency in response
         ]
 
-    def pairs(self, exchange):
+    def pairs(self, exchange, use_cache=True):
         """
         Given an exchange, returns all trading pairs
         """
-        response = self.request(exchange, 'get_pairs')
+        if use_cache:
+            response = self.get_cached_attribute(exchange, 'pairs')
+        else:
+            response = self.request(exchange, 'get_pairs')
 
         return [
             downcased(pair)
