@@ -1,2 +1,0 @@
-git+https://github.com/ericsomdahl/python-bittrex
-https://github.com/s4w3d0ff/python-poloniex
