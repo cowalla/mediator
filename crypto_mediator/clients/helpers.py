@@ -109,6 +109,9 @@ class ClientHelper(object):
     def get_currencies(self):
         raise NotImplementedError
 
+    def trade_history(self):
+        raise NotImplementedError
+
     def get_pairs(self):
         pairs = self._get_client_pairs()
 
@@ -266,6 +269,7 @@ class GDAXClientHelper(ClientHelper):
         'ask': 'lowest_ask',
         'volume': 'current_volume',
         'time': 'updated',
+        'price': 'price',
     }
     SPLIT_CHARACTER = '-'
 
@@ -301,6 +305,8 @@ class LiquiClientHelper(ClientHelper):
     NAME = LIQUI
     CLIENT_CLASS = LiquiClient
 
+    # public methods
+
     def get_ticker(self):
         all_liqui_pairs = [self._to_client_pair(p) for p in self.pairs]
         pair = '-'.join(all_liqui_pairs)
@@ -318,6 +324,17 @@ class LiquiClientHelper(ClientHelper):
         pairs = self.get_pairs()
 
         return self._get_currencies_from_mediator_pairs(pairs)
+
+    # account information
+
+    def trade_history(self):
+        response = self.client.trade_history()
+        trades = response.values()
+
+        for trade in trades:
+            trade['pair'] = self.mediator_pair(trade['pair'])
+
+        return sorted(trades, key=lambda x: x['timestamp'])
 
     def _get_client_pairs(self):
         return self.client.info()['pairs'].keys()

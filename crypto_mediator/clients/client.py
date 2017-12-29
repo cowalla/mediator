@@ -73,6 +73,38 @@ class MetaClient(object):
 
         return value
 
+    # helper functions
+
+    def _in_ticker_format(self, entry):
+        FIELDS = [
+            ('average', float),
+            ('base_volume', float),
+            ('current_volume', float),
+            ('high', float),
+            ('highest_bid', float),
+            ('id', int),
+            ('is_frozen', int),
+            ('last', float),
+            ('low', float),
+            ('lowest_ask', float),
+            ('percent_change', float),
+            ('price', int),
+            ('quote_volume', float),
+            ('updated', timestamp),
+        ]
+
+        for field, fieldtype in FIELDS:
+            value = entry.get(field)
+
+            if value is not None:
+                entry[field] = fieldtype(value)
+
+        return entry
+
+    # API methods
+
+    #    Public API methods
+
     def currencies(self, exchange, use_cache=True):
         """
         Given an exchange, returns all currencies on that exchange
@@ -101,31 +133,6 @@ class MetaClient(object):
             for pair in response
         ]
 
-    def _in_ticker_format(self, entry):
-        FIELDS = [
-            ('average', float),
-            ('base_volume', float),
-            ('current_volume', float),
-            ('high', float),
-            ('highest_bid', float),
-            ('id', int),
-            ('is_frozen', int),
-            ('last', float),
-            ('low', float),
-            ('lowest_ask', float),
-            ('percent_change', float),
-            ('quote_volume', float),
-            ('updated', timestamp),
-        ]
-
-        for field, fieldtype in FIELDS:
-            value = entry.get(field)
-
-            if value is not None:
-                entry[field] = fieldtype(value)
-
-        return entry
-
     def ticker(self, exchange):
         """
         Given an exchange, returns the ticker for all trading pairs
@@ -144,3 +151,8 @@ class MetaClient(object):
             return self._in_ticker_format(response)
         except NotImplementedError:
             return self.ticker(exchange)[pair]
+
+    #    Account information API methods
+
+    def trade_history(self, exchange):
+        return self.request(exchange, 'trade_history')
