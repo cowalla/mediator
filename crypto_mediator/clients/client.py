@@ -152,7 +152,13 @@ class MetaClient(object):
         except NotImplementedError:
             return self.ticker(exchange)[pair]
 
-    #    Account information API methods
+    #    Authenticated methods
 
-    def trade_history(self, exchange):
-        return self.request(exchange, 'trade_history')
+    #       Trading methods
+
+    def create_buy_limit_order(self, exchange, pair, amount, price, **kwargs):
+        return self.request(exchange, 'create_buy_limit_order', pair, amount, price, **kwargs)
+
+    def create_sell_limit_order(self, exchange, pair, amount, price, **kwargs):
+        return self.request(exchange, 'create_sell_limit_order', pair, amount, price, **kwargs)
+
