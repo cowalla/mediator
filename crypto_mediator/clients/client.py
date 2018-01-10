@@ -88,7 +88,7 @@ class MetaClient(object):
             ('low', float),
             ('lowest_ask', float),
             ('percent_change', float),
-            ('price', int),
+            ('price', float),
             ('quote_volume', float),
             ('updated', timestamp),
         ]
