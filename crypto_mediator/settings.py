@@ -22,6 +22,7 @@ MEDIATOR_SPLIT_CHARACTER = '_'
 
 # supported exchanges
 BITTREX = 'bittrex'
+COINBASE = 'coinbase'
 GATECOIN = 'gatecoin'
 GDAX = 'gdax'
 LIQUI = 'liqui'

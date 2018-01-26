@@ -1,9 +1,16 @@
+import json
+import requests
+from dateutil import parser
+
 from bittrex.bittrex import Bittrex as BittrexClient
+from coinbase.wallet.client import Client as CoinbaseClient
 from gdax import AuthenticatedClient as GDAXAuthenticatedClient, PublicClient as GDAXPublicClient
 from liqui import Liqui as LiquiClient
 from poloniex import Poloniex as PoloniexClient
 
-from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, BITTREX, GATECOIN, GDAX, LIQUI, POLONIEX, EMPTY
+from crypto_mediator.settings import(
+    FIATS, MEDIATOR_SPLIT_CHARACTER, BITTREX, COINBASE, GATECOIN, GDAX, LIQUI, POLONIEX, EMPTY
+)
 from crypto_mediator.clients.gatecoin import GatecoinClient
 
 
@@ -11,9 +18,21 @@ class ClientError(AttributeError):
     pass
 
 
+def percent_difference(a, b):
+    return 100.0 * (abs(abs(a) - abs(b)) / abs(a))
+
+
+def to_datetime(str):
+    return parser.parse(str)
+
+
 def delete_if_exists(d, key):
     if d.get(key, EMPTY) is not EMPTY:
         del d[key]
+
+
+def timestamps_are_within_one_minute(ts1, ts2):
+    return abs((to_datetime(ts1) - to_datetime(ts2)).total_seconds()) < 60
 
 
 def flatten(l):
@@ -93,6 +112,9 @@ class ClientHelper(object):
     def __init__(self, *args, **kwargs):
         super(ClientHelper, self).__init__()
 
+        # cache for queried constants
+        self.cache = {}
+
         self.fiats = set()
         self.pairs = []
         self.currencies = []
@@ -106,6 +128,10 @@ class ClientHelper(object):
         self.pairs = sorted(self.pair_map.keys())
         self.fiats = self._get_fiats_from_mediator_pairs(self.pairs)
         self.currencies = self.get_currencies()
+        self.set_account_info()
+
+    def _from_cache(self, key):
+        return self.cache[key]
 
     def get_currencies(self):
         raise NotImplementedError
@@ -117,6 +143,17 @@ class ClientHelper(object):
         pairs = self._get_client_pairs()
 
         return [self.mediator_pair(pair) for pair in pairs]
+
+    def get_accounts(self):
+        pass
+
+    def get_transactions(self, currency):
+        raise NotImplementedError
+
+    def set_account_info(self):
+        self.accounts = {}
+        self.addresses = {}
+        self.currency_account_id_map = {}
 
     def _get_client_pairs(self):
         raise NotImplementedError
@@ -135,6 +172,9 @@ class ClientHelper(object):
 
         return list(set(flat))
 
+    def mediator_transaction(self, transaction):
+        pass
+
     def mediator_pair(self, pair):
         fiat_currency = pair.split(self.SPLIT_CHARACTER)
 
@@ -145,19 +185,19 @@ class BittrexClientHelper(ClientHelper):
     """
     client ticker keys:
         [
-            u'PrevDay',
-            u'Volume',
-            u'Last',
-            u'OpenSellOrders',
-            u'TimeStamp',
-            u'Bid',
-            u'Created',
-            u'OpenBuyOrders',
-            u'High',
-            u'MarketName',
-            u'Low',
-            u'Ask',
-            u'BaseVolume',
+            'PrevDay': ,'PrevDay'
+            'Volume': ,'Volume'
+            'Last': ,'Last'
+            'OpenSellOrders': ,'OpenSellOrders'
+            'TimeStamp': ,'TimeStamp'
+            'Bid': ,'Bid'
+            'Created': ,'Created'
+            'OpenBuyOrders': ,'OpenBuyOrders'
+            'High': ,'High'
+            'MarketName': ,'MarketName'
+            'Low': ,'Low'
+            'Ask': ,'Ask'
+            'BaseVolume': ,'BaseVolume'
         ]
     """
     TICKER_MAP = {
@@ -196,14 +236,6 @@ class BittrexClientHelper(ClientHelper):
 
         return self._get_currencies_from_mediator_pairs(pairs)
 
-    def get_pairs(self):
-        client_pairs = self._get_client_pairs()
-
-        return [
-            self.mediator_pair(pair)
-            for pair in client_pairs
-        ]
-
     def _get_client_pairs(self):
         markets_response = self.client.get_markets()
 
@@ -211,6 +243,125 @@ class BittrexClientHelper(ClientHelper):
             self.SPLIT_CHARACTER.join([r['BaseCurrency'], r['MarketCurrency']])
             for r in markets_response['result']
         ]
+
+class CoinbaseClientHelper(ClientHelper):
+
+    NAME = COINBASE
+    CLIENT_CLASS = CoinbaseClient
+    SPLIT_CHARACTER = '-'
+
+    def __init__(self, *args, **kwargs):
+        super(CoinbaseClientHelper, self).__init__(*args, **kwargs)
+
+        self.set_account_info()
+        self.currency_account_id_map = {
+            currency: self.accounts[currency].id
+            for currency in self.currencies
+        }
+
+    def get_ticker(self):
+        raise NotImplementedError
+
+    def get_currencies(self):
+        pairs = self.get_pairs()
+
+        return self._get_currencies_from_mediator_pairs(pairs)
+
+    def _get_client_pairs(self):
+        client_currencies = ['BTC', 'ETH', 'LTC', 'BCH']
+        fiat = 'USD'
+
+        return [
+            self.SPLIT_CHARACTER.join([currency, fiat])
+            for currency in client_currencies
+        ]
+
+    def _get_account_transactions(self, account_id):
+        return self.client.get_transactions(account_id).data
+
+    def mediator_transaction(self, transaction):
+        return {
+            'amount': float(transaction.amount.amount),
+            'created': to_datetime(transaction.created_at),
+            'currency': transaction.amount.currency.lower(),
+            'txhash': transaction.network['hash'] if transaction.network else None,
+            'exchange': self.NAME,
+        }
+
+    def get_transactions(self, currency):
+        account_id = self.currency_account_id_map[currency]
+
+        return sorted(
+            self._get_account_transactions(account_id),
+            key=lambda x:x['created_at']
+        )
+
+    def get_accounts(self):
+        return self.client.get_accounts().data
+
+    def set_account_info(self):
+        # set accounts
+        self.accounts = {
+            account['balance']['currency'].lower(): account
+            for account in self.get_accounts()
+        }
+        # set addresses
+        self.addresses = {
+            currency: account.get_addresses().data
+            for currency, account in self.accounts.iteritems()
+        }
+        # set id map
+        self.currency_account_id_map = {
+            currency: self.accounts[currency].id
+            for currency in self.currencies
+        }
+
+    def _transactions_passthrough_to_gdax(self, transactions):
+        # finds transactions pairs that pass through to gdax (received, sent),
+        # requires transactions to be sorted by date
+        passthroughs = []
+        current_passthrough = []
+        # look for transfers to gdax first, which have to come after deposits to coinbase
+        transactions.reverse()
+
+        for transaction in transactions:
+            has_exchange_deposit = len(current_passthrough) == 1
+            transaction_type = transaction.type
+            amount = float(transaction.amount.amount)
+
+            if not has_exchange_deposit and not transaction_type == 'exchange_deposit':
+                continue
+            if has_exchange_deposit:
+                if not transaction_type == 'send':
+                    continue
+
+                # check amounts to make sure this is a matching transaction
+                passthrough_amount = float(current_passthrough[0].amount.amount)
+
+                if percent_difference(amount, passthrough_amount) > 1.0:
+                    # not a match!
+                    continue
+
+            current_passthrough.append(transaction)
+            is_complete = len(current_passthrough) == 2
+
+            if is_complete:
+                # complete passthrough
+                current_passthrough.reverse()
+                passthroughs.append(current_passthrough)
+                current_passthrough = []
+
+        passthroughs.reverse()
+
+        return passthroughs
+
+    def get_gdax_deposits(self, currency):
+        transactions = self.get_transactions(currency)
+        passthroughs = self._transactions_passthrough_to_gdax(transactions)
+
+        # returns initial coinbase deposit (that coinbase passes through to gdax)
+        return [passthrough[0] for passthrough in passthroughs]
+
 
 class GatecoinClientHelper(ClientHelper):
     NAME = GATECOIN
@@ -374,6 +525,52 @@ class GDAXClientHelper(ClientHelper):
 
         raise ClientError('Invalid side %s' % kwargs['side'])
 
+    # account info
+
+    def get_accounts(self):
+        response = self.client.get_accounts()
+
+        return {account['currency'].lower(): account for account in response}
+
+    def get_transactions(self, currency):
+        account_id = self.currency_account_id_map[currency]
+        return sorted(
+            flatten(self.client.get_account_history(account_id)),
+            key=lambda x: x['created_at']
+        )
+
+    def get_withdrawals(self):
+        pass
+
+    def get_deposits(self):
+        pass
+
+    def set_account_info(self):
+        # set accounts
+        self.accounts = self.get_accounts()
+        # set addresses
+        self.addresses = {}
+        # set id map
+        self.currency_account_id_map = {
+            currency: self.accounts.get(currency, {}).get('id', None)
+            for currency in self.currencies
+        }
+
+    # helpers
+
+    def mediator_transaction(self, transaction):
+        # {u'created_at': u'2017-10-17T07:26:12.397213Z', u'amount': u'15.9820000000000000',
+        #  u'details': {u'transfer_id': u'd2aa7c06-df2b-4b14-a917-db4bb5889169',
+        #               u'transfer_type': u'deposit'}, u'balance': u'15.9820000000000000',
+        #  u'type': u'transfer', u'id': 314490389}
+
+        return {
+            'amount': float(transaction['amount']),
+            'created': to_datetime(transaction['created_at']),
+            'currency': transaction['amount'],
+            'exchange': self.NAME,
+        }
+
 
 class LiquiClientHelper(ClientHelper):
     TICKER_MAP = {
@@ -387,9 +584,22 @@ class LiquiClientHelper(ClientHelper):
         'updated': 'updated',
         'avg': 'average',
     }
+    TRANSFER_MAP = {
+         'From': 'from_address',
+         'Symbol': 'currency',
+         'Time': 'timestamp',
+         'TxKey': 'txkey',
+         'TxHash': 'txhash',
+         'Amount': 'amount',
+         'Confirmations': 'confirmations',
+         'Address': 'to_address',
+         'Memo': 'memo',
+    }
+    TRANSFER_URL = 'http://webapi.liqui.io/{TYPE}/History'
 
     NAME = LIQUI
     CLIENT_CLASS = LiquiClient
+    MAX_TRADE_COUNT = 1000
 
     # public methods
 
@@ -413,14 +623,58 @@ class LiquiClientHelper(ClientHelper):
 
     # account information
 
-    def trade_history(self):
-        response = self.client.trade_history()
+    def trade_history(self, **kwargs):
+        # most recent trades limited to `MAX_TRADE_COUNT`
+        response = self.client.trade_history(**kwargs)
         trades = response.values()
 
         for trade in trades:
             trade['pair'] = self.mediator_pair(trade['pair'])
 
-        return sorted(trades, key=lambda x: x['timestamp'])
+        return sorted(trades, key=lambda x: x['trade_id'])
+
+    def get_trade_history(self):
+        # gets all trade history
+        if not 'first_trade' in self.cache:
+            first = self.trade_history(count=1)
+            self.cache['first_trade'] = first[0] if first else []
+
+        first_trade_id = self._from_cache('first_trade')['trade_id']
+        new_trades = self.trade_history(from_id=first_trade_id)
+        trades = []
+
+        while len(new_trades) > 0:
+            trades += new_trades
+
+            if len(new_trades) < self.MAX_TRADE_COUNT:
+                # gotten to end of trades
+                break
+
+            first_trade_id = trades[-1]['trade_id']
+            new_trades = self.trade_history(from_id=first_trade_id)[1:]
+
+        return trades
+
+    def get_deposits(self, key):
+        return self.get_transfers(key, 'Deposit')
+
+    def get_withdrawals(self, key):
+        return self.get_transfers(key, 'Withdraw')
+
+    def get_transfers(self, key, transfer_type=None):
+        # Need to use the web api which requires a session key.
+        # Visit /Balances and looking in the network requests for the payload.
+        if transfer_type not in ('Withdraw', 'Deposit'):
+            raise ClientError('Use "Withdraw" or "Deposit"')
+
+        url = self.TRANSFER_URL.format(TYPE=transfer_type)
+        params = {'Id': 0, 'key': key}
+        response = requests.post(url, params)
+
+        return [
+            rename_keys(json.loads(transaction['Data']), self.TRANSFER_MAP)
+            for transaction in response.json()['Value']
+        ]
 
     def _get_client_pairs(self):
         return self.client.info()['pairs'].keys()

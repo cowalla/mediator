@@ -2,9 +2,22 @@ import time
 from dateutil.parser import parse
 
 from crypto_mediator.clients.helpers import (
-    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+    BittrexClientHelper,
+    CoinbaseClientHelper,
+    GatecoinClientHelper,
+    GDAXClientHelper,
+    LiquiClientHelper,
+    PoloniexClientHelper
 )
-from crypto_mediator.settings import BITTREX, GATECOIN, GDAX, LIQUI, POLONIEX, EMPTY
+from crypto_mediator.settings import (
+    BITTREX,
+    COINBASE,
+    GATECOIN,
+    GDAX,
+    LIQUI,
+    POLONIEX,
+    EMPTY
+)
 
 
 def downcased(string):
@@ -36,6 +49,7 @@ class MetaClient(object):
     """
     HELPER_MAP = {
         BITTREX: BittrexClientHelper,
+        COINBASE: CoinbaseClientHelper,
         GATECOIN: GatecoinClientHelper,
         GDAX: GDAXClientHelper,
         LIQUI: LiquiClientHelper,
@@ -161,4 +175,16 @@ class MetaClient(object):
 
     def create_sell_limit_order(self, exchange, pair, amount, price, **kwargs):
         return self.request(exchange, 'create_sell_limit_order', pair, amount, price, **kwargs)
+
+    #       Account methods
+
+    def transactions(self, exchange, currency):
+        """
+        amount
+        created
+        currency
+        txhash
+        exchange
+        """
+        return self.request(exchange, 'get_transactions', currency)
 
