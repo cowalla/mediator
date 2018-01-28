@@ -149,7 +149,7 @@ class TestGDAXClient(unittest.TestCase):
 
     @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
     def setUp(self):
-        self.credentials = {}
+        self.credentials = {'key': 'key', 'b64secret': 'b64secret', 'passphrase': 'mypassword'}
         self.helper = GDAXClientHelper(**self.credentials)
 
     def test_init(self):
@@ -180,6 +180,7 @@ class TestGDAXClient(unittest.TestCase):
                 'highest_bid': '0.05396',
                 'lowest_ask': '0.05397',
                 'current_volume': '62778.70074449',
+                'price': '0.05397000',
                 'updated': '2017-11-25T20:55:50.641000Z'
             }
         )
@@ -187,6 +188,29 @@ class TestGDAXClient(unittest.TestCase):
     def test_get_ticker(self):
         with self.assertRaises(NotImplementedError):
             self.helper.get_ticker()
+
+    def test_get_historic_rates(self):
+        eth_usd_rates = self.helper.get_rates('usd_eth')
+        initial_rate, final_rate = eth_usd_rates[0], eth_usd_rates[-1]
+
+        self.assertDictEqual(
+            initial_rate,
+            {'close': 1087,
+             'high': 1087,
+             'low': 1086.99,
+             'open': 1087,
+             'timestamp': 1517068620,
+             'volume': 9.74795564}
+        )
+        self.assertDictEqual(
+            final_rate,
+            {'close': 1104.99,
+             'high': 1104.99,
+             'low': 1104.98,
+             'open': 1104.99,
+             'timestamp': 1517089620,
+             'volume': 10.5441164}
+        )
 
 
 class TestLiquiClient(unittest.TestCase):

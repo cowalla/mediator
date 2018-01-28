@@ -66,6 +66,10 @@ def rename_keys(data, map):
     }
 
 
+def label_indices(data, map):
+    return dict(zip(map, data))
+
+
 def sorted_by_fiat(currencies, fiat_order=None):
     if fiat_order is None:
         # Mediator order
@@ -440,6 +444,14 @@ class GDAXClientHelper(ClientHelper):
     #     'side',
     #     'size',
     # }
+    RATES_INDICES = [
+        'timestamp',
+        'low',
+        'high',
+        'open',
+        'close',
+        'volume',
+    ]
     SPLIT_CHARACTER = '-'
 
     def __init__(self, *args, **kwargs):
@@ -459,6 +471,20 @@ class GDAXClientHelper(ClientHelper):
         response = self.client.get_product_ticker(client_pair)
 
         return rename_keys(response, self.TICKER_MAP)
+
+    def get_rates(self, pair, dt=None, **kwargs):
+        if dt is None:
+            dt = 60
+
+        kwargs['granularity'] = dt
+        client_pair = self.pair_map[pair]
+        response = self.client.get_product_historic_rates(product_id=client_pair, **kwargs)
+        print str(response)[:200]
+
+        return sorted(
+            [label_indices(rate, self.RATES_INDICES) for rate in response],
+            key=lambda x: x['timestamp']
+        )
 
     def _get_client_pairs(self):
         return [p['id'] for p in self.client.get_products()]
