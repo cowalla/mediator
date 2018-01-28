@@ -1,8 +1,9 @@
 from mock import patch
 import unittest
 
+from crypto_mediator.clients.helpers.helper import flatten, rename_keys, sort_pair_by_fiat
 from crypto_mediator.clients.helpers import (
-    flatten, rename_keys, sort_pair_by_fiat, BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper,
+    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper,
     LiquiClientHelper, PoloniexClientHelper,
 )
 from crypto_mediator.fixtures.liqui import ticker as liqui_ticker
