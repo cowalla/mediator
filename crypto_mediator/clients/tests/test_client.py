@@ -29,11 +29,11 @@ class TestMetaClient(TestCase):
     def setUp(self):
         self.maxDiff = None
         self.kwargs = {
-            'liqui': {},
-            'poloniex': {},
-            'bittrex': {'api_key': None, 'api_secret': None},
-            'gdax': {},
-            'gatecoin': {}
+            'liqui': {'key': 'key', 'secret': 'secret'},
+            'poloniex': {'key': 'key', 'secret': 'secret'},
+            'bittrex': {'api_key': 'key', 'api_secret': 'secret'},
+            'gdax': {'key': 'key', 'b64secret': 'b64secret', 'passphrase': 'mypassword'},
+            'gatecoin': {'key': 'key', 'secret': 'secret'},
         }
         self.client = MetaClient(**self.kwargs)
 
@@ -96,6 +96,7 @@ class TestMetaClient(TestCase):
                 'current_volume': 62778.70074449,
                 'highest_bid': 0.05396,
                 'lowest_ask': 0.05397,
+                'price': 0.05397,
                 'updated': 1511672150.0,
             }
         )

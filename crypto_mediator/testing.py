@@ -6,15 +6,24 @@ from crypto_mediator.fixtures.bittrex import (
 )
 from crypto_mediator.fixtures.gatecoin import livetickers as gatecoin_livetickers
 from crypto_mediator.fixtures.gdax import (
-    currencies as gdax_currencies, products as gdax_products, ticker as gdax_ticker
+    currencies as gdax_currencies,
+    products as gdax_products,
+    rates as gdax_rates,
+    ticker as gdax_ticker,
 )
 from crypto_mediator.fixtures.liqui import info as liqui_info, ticker as liqui_ticker
 from crypto_mediator.fixtures.poloniex import (
     returnCurrencies as poloniex_currencies, returnTicker as poloniex_ticker
 )
 
+class MockClient(Mock):
+    def get_accounts(self):
+        return [
+            {'currency': 'eth', 'address': '0xhfjskahfjakshdsjkh'},
+        ]
 
-class MockBittrexClient(Mock):
+
+class MockBittrexClient(MockClient):
 
     def get_markets(self):
         return deepcopy(bittrex_get_markets.response)
@@ -23,13 +32,13 @@ class MockBittrexClient(Mock):
         return deepcopy(bittrex_get_market_summaries.response)
 
 
-class MockGatecoinClient(Mock):
+class MockGatecoinClient(MockClient):
 
     def livetickers(self):
         return gatecoin_livetickers.response
 
 
-class MockGDAXClient(Mock):
+class MockGDAXClient(MockClient):
 
     def get_currencies(self):
         return gdax_currencies.response
@@ -40,8 +49,11 @@ class MockGDAXClient(Mock):
     def get_products(self):
         return gdax_products.response
 
+    def get_product_historic_rates(self, product_id, **kwargs):
+        return gdax_rates.response(product_id, **kwargs)
 
-class MockLiquiClient(Mock):
+
+class MockLiquiClient(MockClient):
 
     def info(self):
         return liqui_info.response
@@ -53,7 +65,7 @@ class MockLiquiClient(Mock):
         return {p: response[p] for p in pairs}
 
 
-class MockPoloniexClient(Mock):
+class MockPoloniexClient(MockClient):
 
     def returnCurrencies(self):
         return poloniex_currencies.response

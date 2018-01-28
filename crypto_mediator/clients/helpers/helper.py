@@ -1,3 +1,5 @@
+from dateutil import parser
+
 from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, EMPTY
 
 
@@ -8,6 +10,14 @@ class ClientError(AttributeError):
 def delete_if_exists(d, key):
     if d.get(key, EMPTY) is not EMPTY:
         del d[key]
+
+
+def percent_difference(a, b):
+    return 100.0 * (abs(abs(a) - abs(b)) / abs(a))
+
+
+def to_datetime(str):
+    return parser.parse(str)
 
 
 def flatten(l):
@@ -78,6 +88,11 @@ def sort_pair_by_fiat(currency_pair, split_character=None, fiat_order=None):
     sorted_pair = sorted_by_fiat(currencies, fiat_order)
 
     return MEDIATOR_SPLIT_CHARACTER.join(sorted_pair)
+
+
+def label_indices(data, map):
+    return dict(zip(map, data))
+
 
 
 class ClientHelper(object):

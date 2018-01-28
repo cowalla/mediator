@@ -1,6 +1,6 @@
 from gdax import AuthenticatedClient as GDAXAuthenticatedClient, PublicClient as GDAXPublicClient
 
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys, label_indices
 from crypto_mediator.settings import GDAX
 
 
@@ -15,6 +15,14 @@ class GDAXClientHelper(ClientHelper):
         'time': 'updated',
         'price': 'price',
     }
+    RATES_INDICES = [
+        'timestamp',
+        'low',
+        'high',
+        'open',
+        'close',
+        'volume',
+    ]
     # ACTIVE_ORDER_MAP = {
     #     'status',
     #     'created_at',
@@ -51,6 +59,20 @@ class GDAXClientHelper(ClientHelper):
         response = self.client.get_product_ticker(client_pair)
 
         return rename_keys(response, self.TICKER_MAP)
+
+    def get_rates(self, pair, dt=None, **kwargs):
+        if dt is None:
+            dt = 60
+
+        kwargs['granularity'] = dt
+        client_pair = self.pair_map[pair]
+        response = self.client.get_product_historic_rates(product_id=client_pair, **kwargs)
+        print str(response)[:200]
+
+        return sorted(
+            [label_indices(rate, self.RATES_INDICES) for rate in response],
+            key=lambda x: x['timestamp']
+        )
 
     def _get_client_pairs(self):
         return [p['id'] for p in self.client.get_products()]
