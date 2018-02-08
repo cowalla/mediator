@@ -1,6 +1,6 @@
 from poloniex import Poloniex as PoloniexClient
 
-from crypto_mediator.clients.helpers.helper import ClientHelper, rename_keys
+from crypto_mediator.clients.helpers.helper import ClientHelper, rename_keys_values
 from crypto_mediator.settings import POLONIEX
 
 
@@ -25,12 +25,17 @@ class PoloniexClientHelper(ClientHelper):
         return self.client.returnCurrencies().keys()
 
     def get_ticker(self):
-        ticker_response = self.client.returnTicker()
+        return self.client.returnTicker()
 
-        return {
-            self.mediator_pair(pair): rename_keys(data, self.TICKER_MAP)
-            for pair, data in ticker_response.iteritems()
-        }
+    def get_ticker_parser(self, response, value_types):
+        parsed = {}
+
+        for pair, data in response.iteritems():
+            mediator_pair = self.mediator_pair(pair)
+            values = rename_keys_values(data, self.TICKER_MAP, value_types)
+            parsed[mediator_pair] = values
+
+        return parsed
 
     def _get_client_pairs(self):
         return self.get_ticker().keys()

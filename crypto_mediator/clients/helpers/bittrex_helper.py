@@ -1,6 +1,6 @@
 from bittrex.bittrex import Bittrex as BittrexClient
 
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values
 from crypto_mediator.settings import BITTREX
 
 
@@ -44,15 +44,17 @@ class BittrexClientHelper(ClientHelper):
         if not ticker_response['success']:
             raise ClientError(ticker_response['message'])
 
-        ticker = {}
+        return ticker_response
 
-        for entry in ticker_response['result']:
+    def get_ticker_parser(self, response, value_types):
+        parsed = {}
+
+        for entry in response['result']:
             client_pair = entry.pop('MarketName')
             mediator_pair = self.mediator_pair(client_pair)
+            parsed[mediator_pair] = rename_keys_values(entry, self.TICKER_MAP, value_types)
 
-            ticker[mediator_pair] = rename_keys(entry, self.TICKER_MAP)
-
-        return ticker
+        return parsed
 
     def get_currencies(self):
         pairs = self.get_pairs()

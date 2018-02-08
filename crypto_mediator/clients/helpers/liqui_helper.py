@@ -1,6 +1,6 @@
 from liqui import Liqui as LiquiClient
 
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values
 from crypto_mediator.settings import LIQUI
 
 
@@ -30,10 +30,18 @@ class LiquiClientHelper(ClientHelper):
         if ticker_response.get('error'):
             raise ClientError(ticker_response['error'])
 
-        return {
-            self.mediator_pair(pair): rename_keys(data, self.TICKER_MAP)
-            for pair, data in ticker_response.iteritems()
-        }
+        return ticker_response
+
+    def get_ticker_parser(self, response, value_types):
+        parsed = {}
+
+        for pair, data in response.iteritems():
+            mediator_pair = self.mediator_pair(pair)
+            parsed_ticker_value = rename_keys_values(data, self.TICKER_MAP, value_types)
+            parsed[mediator_pair] = parsed_ticker_value
+
+        return parsed
+
 
     def get_currencies(self):
         pairs = self.get_pairs()

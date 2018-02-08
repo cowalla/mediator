@@ -1,5 +1,5 @@
 from crypto_mediator.clients.gatecoin import GatecoinClient
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys, sorted_by_fiat
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, sorted_by_fiat
 from crypto_mediator.settings import GATECOIN, MEDIATOR_SPLIT_CHARACTER
 
 
@@ -41,11 +41,14 @@ class GatecoinClientHelper(ClientHelper):
         if not response:
             raise ClientError('No response from Gatecoin.')
 
-        ticker = {}
+        return response
+
+    def get_ticker_parser(self, response, value_types):
+        parsed = {}
 
         for currency_ticker in response:
             client_pair = currency_ticker['currencyPair']
             mediator_pair = self.mediator_pair(client_pair)
-            ticker[mediator_pair] = rename_keys(currency_ticker, self.TICKER_MAP)
+            parsed[mediator_pair] = rename_keys_values(currency_ticker, self.TICKER_MAP, value_types)
 
-        return ticker
+        return parsed

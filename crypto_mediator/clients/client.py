@@ -35,6 +35,20 @@ def timestamp(data):
     return time.mktime(parsed.timetuple())
 
 
+def coherce_fields(d, fieldtypes):
+    for field, fieldtype in fieldtypes:
+        value = d.get(field, EMPTY)
+
+        if value is not EMPTY:
+            d[field] = fieldtype(value)
+
+    return d
+
+
+class ParsedFieldMissing(BaseException):
+    pass
+
+
 class MetaClient(object):
     """
     Interacts with cryptocurrency market clients to,
@@ -69,14 +83,23 @@ class MetaClient(object):
 
             self.helpers[exchange] = HelperClass(**kwargs)
 
-    def request(self, exchange, endpoint, *args, **kwargs):
+    def request(self, exchange, endpoint, has_data_format=False, *args, **kwargs):
         helper = self.helpers[exchange]
-        helper_function = getattr(helper, endpoint)
+        request_function = getattr(helper, endpoint)
 
-        if not helper_function:
+        if not request_function:
             raise NotImplementedError('Helper function "{}" for exchange "{}" not found!'.format(endpoint, exchange))
 
-        return helper_function(*args, **kwargs)
+        response = request_function(*args, **kwargs)
+        parser_function = getattr(helper, '%s_parser' % endpoint)
+        parsed_field_types = getattr(self, ('%s_fields' % endpoint).upper(), None)
+
+        if has_data_format and parsed_field_types is None:
+            raise ParsedFieldMissing(
+                'Parsed field types for "{}" for exchange "{}" not found!'.format(endpoint, exchange)
+            )
+
+        return parser_function(response, parsed_field_types)
 
     def get_cached_attribute(self, exchange, attr):
         helper = self.helpers[exchange]
@@ -87,33 +110,25 @@ class MetaClient(object):
 
         return value
 
-    # helper functions
+    # formatters
 
-    def _in_ticker_format(self, entry):
-        FIELDS = [
-            ('average', float),
-            ('base_volume', float),
-            ('current_volume', float),
-            ('high', float),
-            ('highest_bid', float),
-            ('id', int),
-            ('is_frozen', int),
-            ('last', float),
-            ('low', float),
-            ('lowest_ask', float),
-            ('percent_change', float),
-            ('price', float),
-            ('quote_volume', float),
-            ('updated', timestamp),
-        ]
-
-        for field, fieldtype in FIELDS:
-            value = entry.get(field)
-
-            if value is not None:
-                entry[field] = fieldtype(value)
-
-        return entry
+    GET_TICKER_FIELDS = {
+        'average': float,
+        'base_volume': float,
+        'current_volume': float,
+        'high': float,
+        'highest_bid': float,
+        'id': int,
+        'is_frozen': int,
+        'last': float,
+        'low': float,
+        'lowest_ask': float,
+        'percent_change': float,
+        'price': float,
+        'quote_volume': float,
+        'updated': timestamp,
+    }
+    GET_PRODUCT_TICKER_FIELDS = GET_TICKER_FIELDS
 
     # API methods
 
@@ -151,18 +166,11 @@ class MetaClient(object):
         """
         Given an exchange, returns the ticker for all trading pairs
         """
-        response = self.request(exchange, 'get_ticker')
-
-        for pair, ticker in response.iteritems():
-            response[pair] = self._in_ticker_format(ticker)
-
-        return response
+        return self.request(exchange, 'get_ticker', has_data_format=True)
 
     def product_ticker(self, exchange, pair):
         try:
-            response = self.request(exchange, 'get_product_ticker', pair)
-
-            return self._in_ticker_format(response)
+            return self.request(exchange=exchange, endpoint='get_product_ticker', has_data_format=True, pair=pair)
         except NotImplementedError:
             return self.ticker(exchange)[pair]
 

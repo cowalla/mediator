@@ -1,4 +1,5 @@
-from dateutil import parser
+import time
+from dateutil.parser import parse
 
 from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, EMPTY
 
@@ -17,7 +18,7 @@ def percent_difference(a, b):
 
 
 def to_datetime(str):
-    return parser.parse(str)
+    return parse(str)
 
 
 def flatten(l):
@@ -43,12 +44,37 @@ def get_fiat_order(f, fiat_order):
         return None
 
 
-def rename_keys(data, map):
-    return {
-        local_key: data[client_key]
-        for client_key, local_key in map.iteritems()
-        if data.get(client_key) is not None
-    }
+def rename_keys_values(data, key_map, value_types, should_be_filled=True):
+    """
+    Takes data from a response and,
+       Renames the keys according to key_map
+       Coherces the values according to value_types
+    """
+    renamed_keys_and_values = {}
+
+    for client_key, local_key in key_map.iteritems():
+        value = data.get(client_key, EMPTY)
+
+        if should_be_filled and value is EMPTY:
+            message = 'Empty value found in response when it should be present. \nkey:"{}"\ndata:"{}"'.format(
+                client_key,
+                data
+            )
+
+            raise ClientError(message)
+
+        try:
+            coherce_value_function = value_types[local_key]
+        except KeyError:
+            raise ClientError('No specified data type for client field %s' % client_key)
+
+        if value is not EMPTY:
+            # coherce to specified data type
+            value = coherce_value_function(value)
+
+        renamed_keys_and_values[local_key] = value
+
+    return renamed_keys_and_values
 
 
 def sorted_by_fiat(currencies, fiat_order=None):
@@ -94,6 +120,48 @@ def label_indices(data, map):
     return dict(zip(map, data))
 
 
+def downcased(string):
+    return str(string).lower()
+
+
+def timestamp(data):
+    try:
+        return float(data)
+    except:
+        pass
+
+    parsed = parse(data)
+
+    return time.mktime(parsed.timetuple())
+
+
+def coherce_fields(d, fieldtypes):
+    for field, fieldtype in fieldtypes:
+        value = d.get(field, EMPTY)
+
+        if value is not EMPTY:
+            d[field] = fieldtype(value)
+
+    return d
+
+
+TICKER_FIELDS = {
+        'average': float,
+        'base_volume': float,
+        'current_volume': float,
+        'high': float,
+        'highest_bid': float,
+        'id': int,
+        'is_frozen': int,
+        'last': float,
+        'low': float,
+        'lowest_ask': float,
+        'percent_change': float,
+        'price': float,
+        'quote_volume': float,
+        'updated': timestamp,
+    }
+
 
 class ClientHelper(object):
     NAME = None
@@ -117,16 +185,40 @@ class ClientHelper(object):
         self.fiats = self._get_fiats_from_mediator_pairs(self.pairs)
         self.currencies = self.get_currencies()
 
+    def get_ticker(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_ticker_parser(self, response, *args, **kwargs):
+        return response
+
     def get_currencies(self):
         raise NotImplementedError
 
-    def trade_history(self):
-        raise NotImplementedError
+    def get_currencies_parser(self, response, *args, **kwargs):
+        return response
 
     def get_pairs(self):
         pairs = self._get_client_pairs()
 
         return [self.mediator_pair(pair) for pair in pairs]
+
+    def get_pairs_parser(self, response, *args, **kwargs):
+        return response
+
+    def trade_history(self):
+        raise NotImplementedError
+
+    def trade_history_parser(self, response, *args, **kwargs):
+        return response
+
+    def get_transactions(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_transactions_parser(self, response, *args, **kwargs):
+        return response
+
+    def get_accounts(self, *args, **kwargs):
+        raise NotImplementedError
 
     def _get_client_pairs(self):
         raise NotImplementedError

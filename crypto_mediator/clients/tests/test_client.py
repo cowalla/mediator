@@ -97,7 +97,7 @@ class TestMetaClient(TestCase):
                 'highest_bid': 0.05396,
                 'lowest_ask': 0.05397,
                 'price': 0.05397,
-                'updated': 1511672150.0,
+                'updated': 1511679350.0,
             }
         )
 

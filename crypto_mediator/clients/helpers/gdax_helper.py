@@ -1,6 +1,6 @@
 from gdax import AuthenticatedClient as GDAXAuthenticatedClient, PublicClient as GDAXPublicClient
 
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys, label_indices
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, label_indices
 from crypto_mediator.settings import GDAX
 
 
@@ -56,9 +56,11 @@ class GDAXClientHelper(ClientHelper):
 
     def get_product_ticker(self, pair):
         client_pair = self.pair_map[pair]
-        response = self.client.get_product_ticker(client_pair)
 
-        return rename_keys(response, self.TICKER_MAP)
+        return self.client.get_product_ticker(client_pair)
+
+    def get_product_ticker_parser(self, response, value_types):
+        return rename_keys_values(response, self.TICKER_MAP, value_types)
 
     def get_rates(self, pair, dt=None, **kwargs):
         if dt is None:

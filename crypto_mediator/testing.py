@@ -32,6 +32,11 @@ class MockBittrexClient(MockClient):
         return deepcopy(bittrex_get_market_summaries.response)
 
 
+class MockCoinbaseClient(MockClient):
+    # TODO: add in coinbase
+    pass
+
+
 class MockGatecoinClient(MockClient):
 
     def livetickers(self):
