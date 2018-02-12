@@ -35,6 +35,10 @@ def timestamp(data):
     return time.mktime(parsed.timetuple())
 
 
+def datafield(data):
+    return data
+
+
 def coherce_fields(d, fieldtypes):
     for field, fieldtype in fieldtypes:
         value = d.get(field, EMPTY)
@@ -130,6 +134,19 @@ class MetaClient(object):
     }
     GET_PRODUCT_TICKER_FIELDS = GET_TICKER_FIELDS
 
+    GET_TRANSACTIONS_FIELDS = {
+        'amount': float,
+        'currency': str,
+        'created': timestamp,
+        'description': str,
+        'details': datafield,
+        'fee': float,
+        'from': str,
+        'exchange': str,
+        'txhash': str,
+        'to': str,
+    }
+
     # API methods
 
     #    Public API methods
@@ -194,5 +211,14 @@ class MetaClient(object):
         txhash
         exchange
         """
-        return self.request(exchange, 'get_transactions', currency)
+        return sorted(
+            self.request(exchange, 'get_transactions', True, currency),
+            key=lambda x: x['created']
+        )
+
+    def _coinbase_and_gdax_transactions(self, exchange, currency):
+        coinbase_transactions = self.transactions('coinbase', currency)
+        gdax_transactions = self.transactions('gdax', currency)
+
+
 

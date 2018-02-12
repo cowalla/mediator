@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 from dateutil.parser import parse
 
 from crypto_mediator.settings import FIATS, MEDIATOR_SPLIT_CHARACTER, EMPTY
@@ -44,7 +45,28 @@ def get_fiat_order(f, fiat_order):
         return None
 
 
-def rename_keys_values(data, key_map, value_types, should_be_filled=True):
+class GetValueError(BaseException):
+    pass
+
+
+def get_value(data, *keys):
+    if len(keys) == 0 or data is EMPTY:
+        return data
+
+    key = keys[0]
+
+    try:
+        value = data.get(key, EMPTY)
+    except AttributeError:
+        raise GetValueError('Data "%s" cannot be gotten from' % str(data))
+
+    if len(keys) == 0:
+        return value
+
+    return get_value(value, *keys[1:])
+
+
+def rename_keys_values(data, key_map, value_types, exchange_name=None, should_be_filled=True):
     """
     Takes data from a response and,
        Renames the keys according to key_map
@@ -52,8 +74,8 @@ def rename_keys_values(data, key_map, value_types, should_be_filled=True):
     """
     renamed_keys_and_values = {}
 
-    for client_key, local_key in key_map.iteritems():
-        value = data.get(client_key, EMPTY)
+    for client_key, key_path in key_map.iteritems():
+        value = get_value(data, *key_path)
 
         if should_be_filled and value is EMPTY:
             message = 'Empty value found in response when it should be present. \nkey:"{}"\ndata:"{}"'.format(
@@ -64,7 +86,7 @@ def rename_keys_values(data, key_map, value_types, should_be_filled=True):
             raise ClientError(message)
 
         try:
-            coherce_value_function = value_types[local_key]
+            coherce_value_function = value_types[client_key]
         except KeyError:
             raise ClientError('No specified data type for client field %s' % client_key)
 
@@ -72,9 +94,21 @@ def rename_keys_values(data, key_map, value_types, should_be_filled=True):
             # coherce to specified data type
             value = coherce_value_function(value)
 
-        renamed_keys_and_values[local_key] = value
+        renamed_keys_and_values[client_key] = value
+
+    if exchange_name:
+        renamed_keys_and_values['exchange'] = exchange_name
 
     return renamed_keys_and_values
+
+
+def group_objects_by(objects, key):
+    groups = defaultdict(list)
+
+    for o in objects:
+        groups[o[key]].append(o)
+
+    return groups
 
 
 def sorted_by_fiat(currencies, fiat_order=None):
@@ -188,7 +222,7 @@ class ClientHelper(object):
     def get_ticker(self, *args, **kwargs):
         raise NotImplementedError
 
-    def get_ticker_parser(self, response, *args, **kwargs):
+    def get_ticker_parser(self, response, value_types):
         return response
 
     def get_currencies(self):
@@ -214,7 +248,7 @@ class ClientHelper(object):
     def get_transactions(self, *args, **kwargs):
         raise NotImplementedError
 
-    def get_transactions_parser(self, response, *args, **kwargs):
+    def get_transactions_parser(self, response, values_list):
         return response
 
     def get_accounts(self, *args, **kwargs):
@@ -241,4 +275,10 @@ class ClientHelper(object):
         fiat_currency = pair.split(self.SPLIT_CHARACTER)
 
         return MEDIATOR_SPLIT_CHARACTER.join(sorted_by_fiat(fiat_currency))
+
+    def get_currency(self, pair):
+        return pair.split(self.SPLIT_CHARACTER)[1]
+
+    def get_fiat(self, pair):
+        return pair.split(self.SPLIT_CHARACTER)[0]
 

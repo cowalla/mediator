@@ -1,6 +1,6 @@
 from gdax import AuthenticatedClient as GDAXAuthenticatedClient, PublicClient as GDAXPublicClient
 
-from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, label_indices
+from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, label_indices, flatten
 from crypto_mediator.settings import GDAX
 
 
@@ -8,6 +8,8 @@ class GDAXClientHelper(ClientHelper):
     # unlikely to be used in the future
     NAME = GDAX
     CLIENT_CLASS = GDAXAuthenticatedClient
+    SPLIT_CHARACTER = '-'
+
     TICKER_MAP = {
         'bid': 'highest_bid',
         'ask': 'lowest_ask',
@@ -40,13 +42,20 @@ class GDAXClientHelper(ClientHelper):
     #     'side',
     #     'size',
     # }
-    SPLIT_CHARACTER = '-'
+    TRANSACTIONS_MAP = {
+        'amount': ('amount', ),
+        'currency': ('currency',),
+        'created': ('created_at',),
+        'details': ('details',),
+    }
 
     def __init__(self, *args, **kwargs):
         if not args and not kwargs:
            self.CLIENT_CLASS = GDAXPublicClient
 
         super(GDAXClientHelper, self).__init__(*args, **kwargs)
+
+        self.set_account_info()
 
     def get_currencies(self):
         return [p['id'].lower() for p in self.client.get_currencies()]
@@ -140,4 +149,66 @@ class GDAXClientHelper(ClientHelper):
             return self.client.sell(**kwargs)
 
         raise ClientError('Invalid side %s' % kwargs['side'])
+
+    def get_accounts(self):
+        return self.client.get_accounts()
+
+    def set_account_info(self):
+        # set accounts
+        self.accounts = {
+            account['currency'].lower(): account
+            for account in self.get_accounts()
+        }
+        # set id map
+        self.currency_account_id_map = {
+            currency: account['id']
+            for currency, account in self.accounts.iteritems()
+        }
+
+    def _get_transactions(self, currency):
+        account_id = self.currency_account_id_map[currency]
+        response = self.client.get_account_history(account_id)
+
+        return flatten(response)
+
+    def get_transactions(self, currency, is_transfer=True):
+        transactions = self._get_transactions(currency)
+
+        if is_transfer:
+            return (
+                currency,
+                [
+                    t for t in transactions
+                    if t['type'] == 'transfer'
+                ],
+            )
+
+        return (
+            currency,
+            [
+                t for t in transactions
+                if t['type'] != 'transfer'
+            ],
+        )
+
+    def get_fills(self, currency):
+        return self.get_transactions(currency, is_transfer=False)
+
+    def get_transactions_parser(self, response, value_types):
+        (currency, transactions) = response
+
+        for t in transactions:
+            t['currency'] = currency
+            t['exchange'] = self.NAME
+            t['details']['id'] = t.get('id', None)
+
+        return [
+            rename_keys_values(transaction, self.TRANSACTIONS_MAP, value_types)
+            for transaction in transactions
+        ]
+
+    def get_fills_parser(self, response, value_types):
+        return self.get_transactions_parser(response, value_types)
+
+
 

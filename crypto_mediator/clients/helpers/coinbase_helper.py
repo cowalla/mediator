@@ -1,10 +1,27 @@
+from collections import defaultdict
+
 from coinbase.wallet.client import Client as CoinbaseClient
 
-from crypto_mediator.clients.helpers.helper import ClientHelper, percent_difference, to_datetime
+from crypto_mediator.clients.helpers.helper import ClientHelper, percent_difference, to_datetime, flatten, rename_keys_values
 from crypto_mediator.settings import COINBASE
 
 
+class CoinbaseClientHelperError(BaseException):
+    pass
+
+
 class CoinbaseClientHelper(ClientHelper):
+    TRANSACTIONS_MAP = {
+        'amount': ('amount', 'amount'),
+        'currency': ('amount', 'currency'),
+        'created': ('created_at',),
+        'description': ('description',),
+        'details': ('details',),
+        'fee': ('network', 'transaction_fee', 'amount'),
+        'from': ('from', 'address'),
+        'txhash': ('network', 'hash'),
+        'to': ('to', 'address'),
+    }
 
     NAME = COINBASE
     CLIENT_CLASS = CoinbaseClient
@@ -36,8 +53,11 @@ class CoinbaseClientHelper(ClientHelper):
             for currency in client_currencies
         ]
 
-    def _get_account_transactions(self, account_id):
+    def _get_coinbase_transactions(self, currency):
+        account_id = self.currency_account_id_map[currency]
+
         return self.client.get_transactions(account_id).data
+
 
     def mediator_transaction(self, transaction):
         return {
@@ -49,12 +69,27 @@ class CoinbaseClientHelper(ClientHelper):
         }
 
     def get_transactions(self, currency):
-        account_id = self.currency_account_id_map[currency]
+        # gets only coinbase transactions (not gdax transfers)
+        transactions = self._get_coinbase_transactions(currency)
+        transactions_by_amount = self._transfers_by_amount(transactions)
 
-        return sorted(
-            self._get_account_transactions(account_id),
-            key=lambda x:x['created_at']
-        )
+        return [
+            value['withdraw'] or value['deposit']
+            for value in transactions_by_amount.values()
+            if bool(value['withdraw']) != bool(value['deposit'])
+        ]
+
+    def get_transactions_parser(self, response, value_types):
+        return [
+            rename_keys_values(
+                transaction,
+                self.TRANSACTIONS_MAP,
+                value_types,
+                exchange_name=self.NAME,
+                should_be_filled=False
+            )
+            for transaction in response
+        ]
 
     def get_accounts(self):
         return self.client.get_accounts().data
@@ -76,49 +111,28 @@ class CoinbaseClientHelper(ClientHelper):
             for currency in self.currencies
         }
 
-    def _transactions_passthrough_to_gdax(self, transactions):
+    def _transfers_by_amount(self, transactions):
         # finds transactions pairs that pass through to gdax (received, sent),
         # requires transactions to be sorted by date
-        passthroughs = []
-        current_passthrough = []
-        # look for transfers to gdax first, which have to come after deposits to coinbase
-        transactions.reverse()
+        def get_amount(transaction):
+            amount = transaction.amount.amount
+            network_amount = transaction.get('network', {}).get('transaction_amount', {})
+
+            if network_amount:
+                amount = network_amount.amount
+            return str(amount)
+
+        def is_withdraw(transaction):
+            return get_amount(transaction).startswith('-')
+
+        deposit_withdrawals = defaultdict(lambda: {'withdraw': None, 'deposit': None})
 
         for transaction in transactions:
-            has_exchange_deposit = len(current_passthrough) == 1
-            transaction_type = transaction.type
-            amount = float(transaction.amount.amount)
+            amount = get_amount(transaction).lstrip('-')
 
-            if not has_exchange_deposit and not transaction_type == 'exchange_deposit':
-                continue
-            if has_exchange_deposit:
-                if not transaction_type == 'send':
-                    continue
+            if is_withdraw(transaction):
+                deposit_withdrawals[amount]['withdraw'] = transaction
+            else:
+                deposit_withdrawals[amount]['deposit'] = transaction
 
-                # check amounts to make sure this is a matching transaction
-                passthrough_amount = float(current_passthrough[0].amount.amount)
-
-                if percent_difference(amount, passthrough_amount) > 1.0:
-                    # not a match!
-                    continue
-
-            current_passthrough.append(transaction)
-            is_complete = len(current_passthrough) == 2
-
-            if is_complete:
-                # complete passthrough
-                current_passthrough.reverse()
-                passthroughs.append(current_passthrough)
-                current_passthrough = []
-
-        passthroughs.reverse()
-
-        return passthroughs
-
-    def get_gdax_deposits(self, currency):
-        transactions = self.get_transactions(currency)
-        passthroughs = self._transactions_passthrough_to_gdax(transactions)
-
-        # returns initial coinbase deposit (that coinbase passes through to gdax)
-        return [passthrough[0] for passthrough in passthroughs]
-
+        return deposit_withdrawals

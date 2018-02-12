@@ -29,4 +29,8 @@ LIQUI = 'liqui'
 POLONIEX = 'poloniex'
 
 # used for unset values
-EMPTY = object()
+class EmptyClass(object):
+    def __repr__(self):
+        return '<EMPTY>'
+
+EMPTY = EmptyClass()
