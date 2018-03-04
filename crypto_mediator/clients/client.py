@@ -134,7 +134,7 @@ class MetaClient(object):
     }
     GET_PRODUCT_TICKER_FIELDS = GET_TICKER_FIELDS
 
-    GET_TRANSACTIONS_FIELDS = {
+    GET_TRANSFERS_FIELDS = {
         'amount': float,
         'currency': str,
         'created': timestamp,
@@ -145,6 +145,7 @@ class MetaClient(object):
         'exchange': str,
         'txhash': str,
         'to': str,
+        'type': str,
     }
 
     # API methods
@@ -203,7 +204,7 @@ class MetaClient(object):
 
     #       Account methods
 
-    def transactions(self, exchange, currency):
+    def transfers(self, exchange, currency=None):
         """
         amount
         created
@@ -212,13 +213,9 @@ class MetaClient(object):
         exchange
         """
         return sorted(
-            self.request(exchange, 'get_transactions', True, currency),
+            self.request(exchange, 'get_transfers', True, currency),
             key=lambda x: x['created']
         )
-
-    def _coinbase_and_gdax_transactions(self, exchange, currency):
-        coinbase_transactions = self.transactions('coinbase', currency)
-        gdax_transactions = self.transactions('gdax', currency)
 
 
 

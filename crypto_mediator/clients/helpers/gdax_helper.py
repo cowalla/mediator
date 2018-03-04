@@ -171,7 +171,7 @@ class GDAXClientHelper(ClientHelper):
 
         return flatten(response)
 
-    def get_transactions(self, currency, is_transfer=True):
+    def get_transactions(self, currency, is_transfer):
         transactions = self._get_transactions(currency)
 
         if is_transfer:
@@ -191,10 +191,10 @@ class GDAXClientHelper(ClientHelper):
             ],
         )
 
-    def get_fills(self, currency):
-        return self.get_transactions(currency, is_transfer=False)
+    def get_transfers(self, currency):
+        return self.get_transactions(currency, is_transfer=True)
 
-    def get_transactions_parser(self, response, value_types):
+    def get_transfers_parser(self, response, value_types):
         (currency, transactions) = response
 
         for t in transactions:
@@ -207,8 +207,11 @@ class GDAXClientHelper(ClientHelper):
             for transaction in transactions
         ]
 
+    def get_fills(self, currency):
+        return self.get_transactions(currency, is_transfer=False)
+
     def get_fills_parser(self, response, value_types):
-        return self.get_transactions_parser(response, value_types)
+        return self.get_transfers_parser(response, value_types)
 
 
 

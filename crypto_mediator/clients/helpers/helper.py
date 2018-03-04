@@ -49,21 +49,21 @@ class GetValueError(BaseException):
     pass
 
 
-def get_value(data, *keys):
+def get_value(data, keys):
     if len(keys) == 0 or data is EMPTY:
         return data
 
     key = keys[0]
 
-    try:
-        value = data.get(key, EMPTY)
-    except AttributeError:
-        raise GetValueError('Data "%s" cannot be gotten from' % str(data))
+    # try:
+    value = data.get(key, EMPTY)
+    # except AttributeError:
+    #     raise GetValueError('Data "%s" cannot be gotten from' % str(data))
 
     if len(keys) == 0:
         return value
 
-    return get_value(value, *keys[1:])
+    return get_value(value, keys[1:])
 
 
 def rename_keys_values(data, key_map, value_types, exchange_name=None, should_be_filled=True):
@@ -75,7 +75,7 @@ def rename_keys_values(data, key_map, value_types, exchange_name=None, should_be
     renamed_keys_and_values = {}
 
     for client_key, key_path in key_map.iteritems():
-        value = get_value(data, *key_path)
+        value = get_value(data, key_path)
 
         if should_be_filled and value is EMPTY:
             message = 'Empty value found in response when it should be present. \nkey:"{}"\ndata:"{}"'.format(
@@ -245,10 +245,10 @@ class ClientHelper(object):
     def trade_history_parser(self, response, *args, **kwargs):
         return response
 
-    def get_transactions(self, *args, **kwargs):
+    def get_transfers(self, *args, **kwargs):
         raise NotImplementedError
 
-    def get_transactions_parser(self, response, values_list):
+    def get_transfers_parser(self, response, values_list):
         return response
 
     def get_accounts(self, *args, **kwargs):
