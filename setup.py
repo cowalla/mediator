@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name = "crypto_mediator",
-    version = "0.4.0",
+    version = "0.8.0",
     author = "Connor Wallace",
     author_email = "wallaconno@gmail.com",
     description = ('Client that allows communication between many crypto exchanges'),
@@ -14,8 +14,15 @@ setup(
         ''
         'crypto_mediator',
         'crypto_mediator.clients',
-        'crypto_mediator.fixtures',
+        'crypto_mediator.clients.helpers',
         'crypto_mediator.clients.tests',
+        'crypto_mediator.fixtures',
+        'crypto_mediator.fixtures.bittrex',
+        'crypto_mediator.fixtures.coinbase',
+        'crypto_mediator.fixtures.gatecoin',
+        'crypto_mediator.fixtures.liqui',
+        'crypto_mediator.fixtures.poloniex',
+
     ],
     install_requires=[
         'astroid==1.5.3',

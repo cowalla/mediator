@@ -6,16 +6,16 @@ from crypto_mediator.settings import POLONIEX
 
 class PoloniexClientHelper(ClientHelper):
     TICKER_MAP = {
-        'id': 'id',
-        'last': 'last',
-        'lowestAsk': 'lowest_ask',
-        'highestBid': 'highest_bid',
-        'percentChange': 'percent_change',
-        'baseVolume': 'base_volume',
-        'quoteVolume': 'quote_volume',
-        'isFrozen': 'is_frozen',
-        'high24hr': 'high',
-        'low24hr': 'low',
+        'id': ('id', ),
+        'last': ('last', ),
+        'lowest_ask': ('lowestAsk', ),
+        'highest_bid': ('highestBid', ),
+        'percent_change': ('percentChange', ),
+        'base_volume': ('baseVolume', ),
+        'quote_volume': ('quoteVolume', ),
+        'is_frozen': ('isFrozen', ),
+        'high': ('high24hr', ),
+        'low': ('low24hr', ),
     }
 
     NAME = POLONIEX
