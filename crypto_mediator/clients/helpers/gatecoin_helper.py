@@ -9,14 +9,14 @@ class GatecoinClientHelper(ClientHelper):
     SPLIT_CHARACTER = ''
 
     TICKER_MAP = {
-        'last': 'last',
-        'bid': 'highest_bid',
-        'ask': 'lowest_ask',
-        'volume': 'base_volume',
-        'high': 'high',
-        'low': 'low',
-        'createDateTime': 'updated',
-        'vwap': 'average',
+        'last': ('last', ),
+        'highest_bid': ('bid', ),
+        'lowest_ask': ('ask', ),
+        'base_volume': ('volume', ),
+        'high': ('high', ),
+        'low': ('low', ),
+        'updated': ('createDateTime', ),
+        'average': ('vwap', ),
     }
 
     def mediator_pair(self, pair):
@@ -49,6 +49,6 @@ class GatecoinClientHelper(ClientHelper):
         for currency_ticker in response:
             client_pair = currency_ticker['currencyPair']
             mediator_pair = self.mediator_pair(client_pair)
-            parsed[mediator_pair] = rename_keys_values(currency_ticker, self.TICKER_MAP, value_types)
+            parsed[mediator_pair] = rename_keys_values(currency_ticker, self.TICKER_MAP, value_types, GATECOIN, False)
 
         return parsed

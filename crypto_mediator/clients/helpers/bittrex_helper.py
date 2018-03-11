@@ -24,14 +24,14 @@ class BittrexClientHelper(ClientHelper):
         ]
     """
     TICKER_MAP = {
-        'Last': 'last',
-        'Bid': 'highest_bid',
-        'Ask': 'lowest_ask',
-        'BaseVolume': 'base_volume',
-        'Volume': 'current_volume',
-        'High': 'high',
-        'Low': 'low',
-        'TimeStamp': 'updated',
+        'last': ('Last', ),
+        'highest_bid': ('Bid', ),
+        'lowest_ask': ('Ask', ),
+        'base_volume': ('BaseVolume', ),
+        'current_volume': ('Volume', ),
+        'high': ('High', ),
+        'low': ('Low', ),
+        'updated': ('TimeStamp', ),
     }
 
     NAME = BITTREX
@@ -52,7 +52,13 @@ class BittrexClientHelper(ClientHelper):
         for entry in response['result']:
             client_pair = entry.pop('MarketName')
             mediator_pair = self.mediator_pair(client_pair)
-            parsed[mediator_pair] = rename_keys_values(entry, self.TICKER_MAP, value_types)
+            parsed[mediator_pair] = rename_keys_values(
+                entry,
+                self.TICKER_MAP,
+                value_types,
+                BITTREX,
+                should_be_filled=False
+            )
 
         return parsed
 

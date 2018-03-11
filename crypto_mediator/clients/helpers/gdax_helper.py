@@ -11,11 +11,11 @@ class GDAXClientHelper(ClientHelper):
     SPLIT_CHARACTER = '-'
 
     TICKER_MAP = {
-        'bid': 'highest_bid',
-        'ask': 'lowest_ask',
-        'volume': 'current_volume',
-        'time': 'updated',
-        'price': 'price',
+        'highest_bid': ('bid', ),
+        'lowest_ask': ('ask', ),
+        'current_volume': ('volume', ),
+        'updated': ('time', ),
+        'price': ('price', ),
     }
     RATES_INDICES = [
         'timestamp',
@@ -69,7 +69,7 @@ class GDAXClientHelper(ClientHelper):
         return self.client.get_product_ticker(client_pair)
 
     def get_product_ticker_parser(self, response, value_types):
-        return rename_keys_values(response, self.TICKER_MAP, value_types)
+        return rename_keys_values(response, self.TICKER_MAP, value_types, 'gdax', should_be_filled=False)
 
     def get_rates(self, pair, dt=None, **kwargs):
         if dt is None:
