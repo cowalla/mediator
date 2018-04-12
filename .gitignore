@@ -8,9 +8,5 @@ pip-selfcheck.json
 .cache
 man/
 
-// todo: remove
-crypto_mediator/secret.py
-
-dist/
 crypto_mediator.egg-info/
 
