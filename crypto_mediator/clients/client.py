@@ -85,7 +85,12 @@ class MetaClient(object):
             if HelperClass is None:
                 raise NotImplementedError('{} is not implemented!'.format(exchange))
 
-            self.helpers[exchange] = HelperClass(**kwargs)
+            try:
+                self.helpers[exchange] = HelperClass(**kwargs)
+            except:
+                print exchange
+                print 'KWARGS caused authentication error'
+                raise
 
     def request(self, exchange, endpoint, has_data_format=False, *args, **kwargs):
         helper = self.helpers[exchange]

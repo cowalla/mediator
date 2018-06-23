@@ -9,4 +9,4 @@ pip-selfcheck.json
 man/
 
 crypto_mediator.egg-info/
-
+crypto_mediator/secret.py

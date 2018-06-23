@@ -24,4 +24,4 @@ Import the metaclient into your project,
 - `py.test crypto_mediator/clients/tests`
 
 ### example shell
-- `python -m crypto_mediator.example`
+- `python -i -m crypto_mediator.example`

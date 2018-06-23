@@ -1,7 +1,6 @@
 import datetime
 
 from crypto_mediator.clients.client import MetaClient
-from crypto_mediator.clients.helpers.helper import group_objects_by
 from crypto_mediator.secret import (
     BITTREX_API_KEY, BITTREX_API_SECRET,
     COINBASE_API_KEY, COINBASE_API_SECRET,
@@ -25,12 +24,11 @@ kwargs = {
     'gatecoin': {'key': GATECOIN_API_KEY, 'secret': GATECOIN_API_SECRET},
 }
 
+requires_kwargs = {'gdax', 'coinbase'}
+original_kwargs = kwargs.copy()
+
+for exchange in original_kwargs.keys():
+    if not all(kwargs[exchange].values()):
+        kwargs.pop(exchange)
 
 client = MetaClient(**kwargs)
-
-
-if __name__ == '__main__':
-    liqui_ticker = client.ticker('liqui')
-
-    import pdb
-    pdb.set_trace()
