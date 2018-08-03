@@ -1,5 +1,5 @@
 # MEDIATOR
-A meta client that works to interract with several exchanges painlessly. Mediator knows how to interract with these exchanges so you don't have to.
+A meta client that makes interracting with several exchanges painless. Mediator knows how to interract with these exchanges so you don't have to.
 
 
 ### Getting started
