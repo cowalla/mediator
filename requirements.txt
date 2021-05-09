@@ -1,6 +1,7 @@
 cbpro==1.1.4
 coinbase==2.0.6
 liqui==1.0.1
+mock==4.0.3
 poloniex @ https://github.com/s4w3d0ff/python-poloniex/archive/v0.4.6.zip
 pytest==3.2.5
 python-bittrex @ git+https://github.com/ericsomdahl/python-bittrex.git@2dbc08e3221e07a9e618eaa025d98ed197d28e31

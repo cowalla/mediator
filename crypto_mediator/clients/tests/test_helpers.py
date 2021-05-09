@@ -197,8 +197,8 @@ class TestLiquiClient(unittest.TestCase):
         self.assertIn('usdt_eth', self.helper.pairs)
         self.assertIn('btc_ltc', self.helper.pairs)
 
-        self.assertListEqual(self.helper.fiats, ['usdt', 'eth', 'btc'])
-        self.assertEqual(self.helper.currencies, all_currencies)
+        self.assertListEqual(sorted(self.helper.fiats), sorted(['usdt', 'eth', 'btc']))
+        self.assertEqual(sorted(self.helper.currencies), sorted(all_currencies))
 
     def test_get_pairs(self):
         pairs = self.helper.get_pairs()
@@ -232,7 +232,7 @@ class TestPoloniexClient(unittest.TestCase):
         self.assertIn('usdt_eth', self.helper.pairs)
         self.assertIn('btc_ltc', self.helper.pairs)
 
-        self.assertListEqual(self.helper.fiats, ['ltc', 'zec', 'dash', 'xmr', 'btc', 'eth', 'usdt'])
+        self.assertListEqual(sorted(self.helper.fiats), sorted(['ltc', 'zec', 'dash', 'xmr', 'btc', 'eth', 'usdt']))
         self.assertIn('ETC', self.helper.currencies)
 
     def test_get_pairs(self):
