@@ -41,11 +41,14 @@ def gather_kwargs():
 
 
 client = MetaClient(**gather_kwargs())
+
+# Get some data.
 poloniex_ticker = client.ticker('poloniex')
 bittrex_ticker = client.ticker('bittrex')
-current_ticker = client.product_ticker('coinbasepro', 'usd_btc')
-historical_prices = client.helpers['coinbasepro'].get_rates('usd_btc', 60 * 60 * 24)
 
-print('Product ticker for USD-BTC on Coinbase Pro: %s' % current_ticker)
-print('Historical prices for USD-BTC on Coinbase Pro for the last 300 days: %s' % historical_prices)
+if 'coinbasepro' in client.helpers:
+    current_ticker = client.product_ticker('coinbasepro', 'usd_btc')
+    historical_prices = client.helpers['coinbasepro'].get_rates('usd_btc', 60 * 60 * 24)
+    print('Product ticker for USD-BTC on Coinbase Pro: %s' % current_ticker)
+    print('Historical prices for USD-BTC on Coinbase Pro for the last 300 days: %s' % historical_prices)
 
