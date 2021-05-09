@@ -1,3 +1,5 @@
+# Deprecated. GateCoin doesn't exist anymore.
+
 from crypto_mediator.clients.gatecoin import GatecoinClient
 from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, sorted_by_fiat
 from crypto_mediator.settings import GATECOIN, MEDIATOR_SPLIT_CHARACTER

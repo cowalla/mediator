@@ -3,10 +3,10 @@ from unittest import TestCase
 
 from crypto_mediator.clients.client import downcased, MetaClient
 from crypto_mediator.clients.helpers import (
-    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper, LiquiClientHelper, PoloniexClientHelper
+    BittrexClientHelper, GatecoinClientHelper, CoinbaseProClientHelper, LiquiClientHelper, PoloniexClientHelper
 )
 from crypto_mediator.testing import (
-    MockBittrexClient, MockGatecoinClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient,
+    MockBittrexClient, MockGatecoinClient, MockCoinbaseProClient, MockLiquiClient, MockPoloniexClient,
 )
 
 
@@ -23,7 +23,7 @@ class TestMetaClient(TestCase):
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
     @patch.object(GatecoinClientHelper, 'CLIENT_CLASS', MockGatecoinClient)
-    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
+    @patch.object(CoinbaseProClientHelper, 'CLIENT_CLASS', MockCoinbaseProClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
     def setUp(self):
@@ -32,7 +32,7 @@ class TestMetaClient(TestCase):
             'liqui': {'key': 'key', 'secret': 'secret'},
             'poloniex': {'key': 'key', 'secret': 'secret'},
             'bittrex': {'api_key': 'key', 'api_secret': 'secret'},
-            'gdax': {'key': 'key', 'b64secret': 'b64secret', 'passphrase': 'mypassword'},
+            'coinbasepro': {'key': 'key', 'b64secret': 'b64secret', 'passphrase': 'mypassword'},
             'gatecoin': {'key': 'key', 'secret': 'secret'},
         }
         self.client = MetaClient(**self.kwargs)
@@ -42,7 +42,7 @@ class TestMetaClient(TestCase):
 
     @patch.object(BittrexClientHelper, 'CLIENT_CLASS', MockBittrexClient)
     @patch.object(GatecoinClientHelper, 'CLIENT_CLASS', MockGatecoinClient)
-    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
+    @patch.object(CoinbaseProClientHelper, 'CLIENT_CLASS', MockCoinbaseProClient)
     @patch.object(LiquiClientHelper, 'CLIENT_CLASS', MockLiquiClient)
     @patch.object(PoloniexClientHelper, 'CLIENT_CLASS', MockPoloniexClient)
     def test_init_unsupported_exchange(self):
@@ -85,11 +85,11 @@ class TestMetaClient(TestCase):
             }
         )
 
-    def test_gdax_ticker(self):
+    def test_coinbasepro_ticker(self):
         with self.assertRaises(NotImplementedError):
-            self.client.ticker('gdax')
+            self.client.ticker('coinbasepro')
 
-        eth_btc = self.client.product_ticker('gdax', 'btc_eth')
+        eth_btc = self.client.product_ticker('coinbasepro', 'btc_eth')
         self.assertDictEqual(
             eth_btc,
             {
@@ -149,9 +149,9 @@ class TestMetaClient(TestCase):
 
         self.assertIn(pair, data)
 
-    def test_gdax_pairs(self):
+    def test_coinbasepro_pairs(self):
         pair = 'btc_ltc'
-        data = self.client.pairs('gdax')
+        data = self.client.pairs('coinbasepro')
 
         self.assertIn(pair, data)
 

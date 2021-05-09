@@ -1,4 +1,4 @@
-request_url = 'https://api.gdax.com/products/{id}/ticker'
+request_url = 'https://api.coinbasepro.com/products/{id}/ticker'
 
 
 def response(id):

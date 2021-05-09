@@ -1,4 +1,4 @@
-request_url = 'https://api.gdax.com/products/'
+request_url = 'https://api.coinbasepro.com/products/'
 response = [
     {"id": "LTC-EUR", "base_currency": "LTC", "quote_currency": "EUR", "base_min_size": "0.01",
      "base_max_size": "1000000", "quote_increment": "0.01", "display_name": "LTC/EUR",

@@ -68,38 +68,36 @@ class CoinbaseClientHelper(ClientHelper):
             'exchange': self.NAME,
         }
 
-    def get_transfers(self, currency, as_gdax=True):
-        # gets only coinbase transactions (not gdax transfers)
+    def get_transfers(self, currency, as_coinbasepro=True):
+        # gets only coinbase transactions (not coinbasepro transfers)
         transactions = self._get_coinbase_transactions(currency)
         transactions_by_amount = self._transfers_by_amount(transactions)
-        # If there's a paired withdrawal to a deposit, it's probably a gdax transfer
-        non_gdax_transactions = [
+        # If there's a paired withdrawal to a deposit, it's probably a coinbasepro transfer
+        non_coinbasepro_transactions = [
             value['withdraw'] or value['deposit']
             for value in transactions_by_amount.values()
             if bool(value['withdraw']) != bool(value['deposit']) # XOR
         ]
 
-        if not as_gdax:
-            return non_gdax_transactions
+        if not as_coinbasepro:
+            return non_coinbasepro_transactions
 
-        gdax_transactions = [
+        coinbasepro_transactions = [
             (value['withdraw'], value['deposit'])
             for value in transactions_by_amount.values()
             if value['withdraw'] and value['deposit']  # and
         ]
-        coinbase_transactions_for_gdax = []
+        coinbase_transactions_for_coinbasepro = []
 
-        for (withdraw, deposit) in gdax_transactions:
+        for (withdraw, deposit) in coinbasepro_transactions:
             if withdraw['type'] == 'exchange_deposit':
-                # deposit came from outside, going into gdax
-                coinbase_transactions_for_gdax.append(deposit)
+                # deposit came from outside, going into coinbasepro
+                coinbase_transactions_for_coinbasepro.append(deposit)
             else:
-                # deposit came from gdax, meaning it's a withdrawal from coinbase
-                print 'gdax withdrawal!'
-                print withdraw
-                coinbase_transactions_for_gdax.append(withdraw)
+                # deposit came from coinbasepro, meaning it's a withdrawal from coinbase
+                coinbase_transactions_for_coinbasepro.append(withdraw)
 
-        return non_gdax_transactions + coinbase_transactions_for_gdax
+        return non_coinbasepro_transactions + coinbase_transactions_for_coinbasepro
 
 
     def get_transfers_parser(self, response, value_types):
@@ -126,7 +124,7 @@ class CoinbaseClientHelper(ClientHelper):
         # set addresses
         self.addresses = {
             currency: account.get_addresses().data
-            for currency, account in self.accounts.iteritems()
+            for currency, account in self.accounts.items()
         }
         # set id map
         self.currency_account_id_map = {
@@ -135,7 +133,7 @@ class CoinbaseClientHelper(ClientHelper):
         }
 
     def _transfers_by_amount(self, transactions):
-        # finds transactions pairs that pass through to gdax (received, sent),
+        # finds transactions pairs that pass through to coinbasepro (received, sent),
         # requires transactions to be sorted by date
         def get_amount(transaction):
             amount = transaction.amount.amount

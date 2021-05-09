@@ -1,11 +1,12 @@
 import time
+import logging
 from dateutil.parser import parse
 
 from crypto_mediator.clients.helpers import (
     BittrexClientHelper,
     CoinbaseClientHelper,
     GatecoinClientHelper,
-    GDAXClientHelper,
+    CoinbaseProClientHelper,
     LiquiClientHelper,
     PoloniexClientHelper
 )
@@ -13,11 +14,13 @@ from crypto_mediator.settings import (
     BITTREX,
     COINBASE,
     GATECOIN,
-    GDAX,
+    COINBASEPRO,
     LIQUI,
     POLONIEX,
     EMPTY
 )
+
+logger = logging.getLogger(__name__)
 
 
 def downcased(string):
@@ -35,11 +38,25 @@ def timestamp(data):
     return time.mktime(parsed.timetuple())
 
 
+def to_float(data):
+    if data is None:
+        return 0
+    else:
+        return float(data)
+
+
+def to_int(data):
+    if data is None:
+        return 0
+    else:
+        return int(data)
+
+
 def datafield(data):
     return data
 
 
-def coherce_fields(d, fieldtypes):
+def coerce_fields(d, fieldtypes):
     for field, fieldtype in fieldtypes:
         value = d.get(field, EMPTY)
 
@@ -49,7 +66,11 @@ def coherce_fields(d, fieldtypes):
     return d
 
 
-class ParsedFieldMissing(BaseException):
+class ParsedFieldMissing(Exception):
+    pass
+
+
+class ClientInitFailure(Exception):
     pass
 
 
@@ -69,7 +90,7 @@ class MetaClient(object):
         BITTREX: BittrexClientHelper,
         COINBASE: CoinbaseClientHelper,
         GATECOIN: GatecoinClientHelper,
-        GDAX: GDAXClientHelper,
+        COINBASEPRO: CoinbaseProClientHelper,
         LIQUI: LiquiClientHelper,
         POLONIEX: PoloniexClientHelper,
     }
@@ -79,7 +100,7 @@ class MetaClient(object):
 
         self.helpers = {}
 
-        for exchange, kwargs in exchange_kwargs.iteritems():
+        for exchange, kwargs in exchange_kwargs.items():
             HelperClass = self.HELPER_MAP.get(exchange)
 
             if HelperClass is None:
@@ -87,10 +108,11 @@ class MetaClient(object):
 
             try:
                 self.helpers[exchange] = HelperClass(**kwargs)
-            except:
-                print exchange
-                print 'KWARGS caused authentication error'
-                raise
+            except BaseException as e:
+                logger.error(
+                    'Could not create HelperClass for exchange %s, kwargs %s' % (exchange, str(kwargs))
+                )
+                raise ClientInitFailure from e
 
     def request(self, exchange, endpoint, has_data_format=False, *args, **kwargs):
         helper = self.helpers[exchange]
@@ -122,30 +144,30 @@ class MetaClient(object):
     # formatters
 
     GET_TICKER_FIELDS = {
-        'average': float,
-        'base_volume': float,
-        'current_volume': float,
-        'high': float,
-        'highest_bid': float,
-        'id': int,
-        'is_frozen': int,
-        'last': float,
-        'low': float,
-        'lowest_ask': float,
-        'percent_change': float,
-        'price': float,
-        'quote_volume': float,
+        'average': to_float,
+        'base_volume': to_float,
+        'current_volume': to_float,
+        'high': to_float,
+        'highest_bid': to_float,
+        'id': to_int,
+        'is_frozen': to_int,
+        'last': to_float,
+        'low': to_float,
+        'lowest_ask': to_float,
+        'percent_change': to_float,
+        'price': to_float,
+        'quote_volume': to_float,
         'updated': timestamp,
     }
     GET_PRODUCT_TICKER_FIELDS = GET_TICKER_FIELDS
 
     GET_TRANSFERS_FIELDS = {
-        'amount': float,
+        'amount': to_float,
         'currency': str,
         'created': timestamp,
         'description': str,
         'details': datafield,
-        'fee': float,
+        'fee': to_float,
         'from': str,
         'exchange': str,
         'txhash': str,

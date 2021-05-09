@@ -30,7 +30,7 @@ class PoloniexClientHelper(ClientHelper):
     def get_ticker_parser(self, response, value_types):
         parsed = {}
 
-        for pair, data in response.iteritems():
+        for pair, data in response.items():
             mediator_pair = self.mediator_pair(pair)
             values = rename_keys_values(data, self.TICKER_MAP, value_types)
             parsed[mediator_pair] = values

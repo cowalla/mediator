@@ -1,3 +1,5 @@
+# Depricated. Liqui doesn't exist anymore.
+
 from collections import defaultdict
 from liqui import Liqui as LiquiClient
 
@@ -36,7 +38,7 @@ class LiquiClientHelper(ClientHelper):
         super(LiquiClientHelper, self).__init__(*args, **kwargs)
 
         self.id_currency_map = self._get_id_currency_map()
-        self.currency_id_map = {currency: c_id for c_id, currency in self.id_currency_map.iteritems()}
+        self.currency_id_map = {currency: c_id for c_id, currency in self.id_currency_map.items()}
 
     # public methods
 
@@ -53,7 +55,7 @@ class LiquiClientHelper(ClientHelper):
     def get_ticker_parser(self, response, value_types):
         parsed = {}
 
-        for pair, data in response.iteritems():
+        for pair, data in response.items():
             mediator_pair = self.mediator_pair(pair)
             parsed_ticker_value = rename_keys_values(data, self.TICKER_MAP, value_types)
             parsed[mediator_pair] = parsed_ticker_value

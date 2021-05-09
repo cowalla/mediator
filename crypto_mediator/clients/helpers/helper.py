@@ -70,11 +70,11 @@ def rename_keys_values(data, key_map, value_types, exchange_name=None, should_be
     """
     Takes data from a response and,
        Renames the keys according to key_map
-       Coherces the values according to value_types
+       coerces the values according to value_types
     """
     renamed_keys_and_values = {}
 
-    for client_key, key_path in key_map.iteritems():
+    for client_key, key_path in key_map.items():
         value = get_value(data, key_path)
 
         if should_be_filled and value is EMPTY:
@@ -86,13 +86,13 @@ def rename_keys_values(data, key_map, value_types, exchange_name=None, should_be
             raise ClientError(message)
 
         try:
-            coherce_value_function = value_types[client_key]
+            coerce_value_function = value_types[client_key]
         except KeyError:
             raise ClientError('No specified data type for client field %s' % client_key)
 
         if value is not EMPTY:
-            # coherce to specified data type
-            value = coherce_value_function(value)
+            # coerce to specified data type
+            value = coerce_value_function(value)
 
         renamed_keys_and_values[client_key] = value
 
@@ -169,7 +169,7 @@ def timestamp(data):
     return time.mktime(parsed.timetuple())
 
 
-def coherce_fields(d, fieldtypes):
+def coerce_fields(d, fieldtypes):
     for field, fieldtype in fieldtypes:
         value = d.get(field, EMPTY)
 

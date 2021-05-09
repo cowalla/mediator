@@ -1,13 +1,21 @@
-from gdax import AuthenticatedClient as GDAXAuthenticatedClient, PublicClient as GDAXPublicClient
+import logging
+
+from cbpro import AuthenticatedClient as CoinbaseProAuthenticatedClient, PublicClient as CoinbaseProPublicClient
 
 from crypto_mediator.clients.helpers.helper import ClientError, ClientHelper, rename_keys_values, label_indices, flatten
-from crypto_mediator.settings import GDAX
+from crypto_mediator.settings import COINBASEPRO
 
 
-class GDAXClientHelper(ClientHelper):
-    # unlikely to be used in the future
-    NAME = GDAX
-    CLIENT_CLASS = GDAXAuthenticatedClient
+logger = logging.getLogger(__name__)
+
+
+class CoinbaseProClientError(Exception):
+    pass
+
+
+class CoinbaseProClientHelper(ClientHelper):
+    NAME = COINBASEPRO
+    CLIENT_CLASS = CoinbaseProAuthenticatedClient
     SPLIT_CHARACTER = '-'
 
     TICKER_MAP = {
@@ -51,9 +59,9 @@ class GDAXClientHelper(ClientHelper):
 
     def __init__(self, *args, **kwargs):
         if not args and not kwargs:
-           self.CLIENT_CLASS = GDAXPublicClient
+           self.CLIENT_CLASS = CoinbaseProPublicClient
 
-        super(GDAXClientHelper, self).__init__(*args, **kwargs)
+        super(CoinbaseProClientHelper, self).__init__(*args, **kwargs)
 
         self.set_account_info()
 
@@ -69,16 +77,16 @@ class GDAXClientHelper(ClientHelper):
         return self.client.get_product_ticker(client_pair)
 
     def get_product_ticker_parser(self, response, value_types):
-        return rename_keys_values(response, self.TICKER_MAP, value_types, 'gdax', should_be_filled=False)
+        return rename_keys_values(response, self.TICKER_MAP, value_types, 'coinbasepro', should_be_filled=False)
 
-    def get_rates(self, pair, dt=None, **kwargs):
-        if dt is None:
-            dt = 60
+    def get_rates(self, pair, sample_rate_seconds=None, **kwargs):
+        if sample_rate_seconds is None:
+            # default to minute precision.
+            sample_rate_seconds = 60
 
-        kwargs['granularity'] = dt
+        kwargs['granularity'] = sample_rate_seconds
         client_pair = self.pair_map[pair]
         response = self.client.get_product_historic_rates(product_id=client_pair, **kwargs)
-        print str(response)[:200]
 
         return sorted(
             [label_indices(rate, self.RATES_INDICES) for rate in response],
@@ -151,7 +159,12 @@ class GDAXClientHelper(ClientHelper):
         raise ClientError('Invalid side %s' % kwargs['side'])
 
     def get_accounts(self):
-        return self.client.get_accounts()
+        accounts = self.client.get_accounts()
+
+        if 'message' in accounts:
+            raise CoinbaseProClientError(accounts['message'])
+
+        return accounts
 
     def set_account_info(self):
         # set accounts
@@ -162,7 +175,7 @@ class GDAXClientHelper(ClientHelper):
         # set id map
         self.currency_account_id_map = {
             currency: account['id']
-            for currency, account in self.accounts.iteritems()
+            for currency, account in self.accounts.items()
         }
 
     def _get_transactions(self, currency):

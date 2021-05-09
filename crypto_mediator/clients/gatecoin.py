@@ -1,3 +1,5 @@
+# Deprecated. Gatecoin doesn't exist anymore.
+
 import requests
 
 

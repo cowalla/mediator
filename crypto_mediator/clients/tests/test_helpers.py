@@ -3,7 +3,7 @@ import unittest
 
 from crypto_mediator.clients.helpers.helper import flatten, rename_keys_values, sort_pair_by_fiat
 from crypto_mediator.clients.helpers import (
-    BittrexClientHelper, GatecoinClientHelper, GDAXClientHelper,
+    BittrexClientHelper, GatecoinClientHelper, CoinbaseProClientHelper,
     LiquiClientHelper, PoloniexClientHelper,
 )
 from crypto_mediator.fixtures.liqui import ticker as liqui_ticker
@@ -12,7 +12,7 @@ from crypto_mediator.fixtures.poloniex import (
 )
 
 from crypto_mediator.testing import (
-    MockBittrexClient, MockGatecoinClient, MockGDAXClient, MockLiquiClient, MockPoloniexClient,
+    MockBittrexClient, MockGatecoinClient, MockCoinbaseProClient, MockLiquiClient, MockPoloniexClient,
 )
 
 
@@ -125,12 +125,12 @@ class TestGatecoinClient(unittest.TestCase):
         self.assertNotEqual(len(ticker), 0)
 
 
-class TestGDAXClient(unittest.TestCase):
+class TestCoinbaseProClient(unittest.TestCase):
 
-    @patch.object(GDAXClientHelper, 'CLIENT_CLASS', MockGDAXClient)
+    @patch.object(CoinbaseProClientHelper, 'CLIENT_CLASS', MockCoinbaseProClient)
     def setUp(self):
         self.credentials = {'key': 'key', 'b64secret': 'b64secret', 'passphrase': 'mypassword'}
-        self.helper = GDAXClientHelper(**self.credentials)
+        self.helper = CoinbaseProClientHelper(**self.credentials)
 
     def test_init(self):
         self.assertIn('usd_eth', self.helper.pairs)

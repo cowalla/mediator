@@ -1,4 +1,4 @@
-request_url = 'https://api.gdax.com/currencies/'
+request_url = 'https://api.coinbasepro.com/currencies/'
 response = [{"id": "BTC", "name": "Bitcoin", "min_size": "0.00000001"},
             {"id": "EUR", "name": "Euro", "min_size": "0.01000000"},
             {"id": "LTC", "name": "Litecoin", "min_size": "0.00000001"},

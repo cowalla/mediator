@@ -34,7 +34,7 @@ setup(
         'configparser==3.5.0',
         'enum34==1.1.6',
         'funcsigs==1.0.2',
-        'gdax==1.0.6',
+        'coinbasepro==1.0.6',
         'idna==2.6',
         'isort==4.2.15',
         'lazy-object-proxy==1.3.1',

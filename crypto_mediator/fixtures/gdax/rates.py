@@ -1,4 +1,4 @@
-request_url = lambda x: 'https://api.gdax.com/products/{product_id}/candles'.format(product_id=x)
+request_url = lambda x: 'https://api.coinbasepro.com/products/{product_id}/candles'.format(product_id=x)
 
 
 def response(product_id, **kwargs):

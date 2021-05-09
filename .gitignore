@@ -7,6 +7,6 @@ lib/
 pip-selfcheck.json
 .cache
 man/
+venv/
 
 crypto_mediator.egg-info/
-crypto_mediator/secret.py

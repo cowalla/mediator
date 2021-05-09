@@ -5,11 +5,11 @@ from crypto_mediator.fixtures.bittrex import (
     getmarkets as bittrex_get_markets, getmarketsummaries as bittrex_get_market_summaries
 )
 from crypto_mediator.fixtures.gatecoin import livetickers as gatecoin_livetickers
-from crypto_mediator.fixtures.gdax import (
-    currencies as gdax_currencies,
-    products as gdax_products,
-    rates as gdax_rates,
-    ticker as gdax_ticker,
+from crypto_mediator.fixtures.coinbasepro import (
+    currencies as coinbasepro_currencies,
+    products as coinbasepro_products,
+    rates as coinbasepro_rates,
+    ticker as coinbasepro_ticker,
 )
 from crypto_mediator.fixtures.liqui import info as liqui_info, ticker as liqui_ticker
 from crypto_mediator.fixtures.poloniex import (
@@ -43,19 +43,19 @@ class MockGatecoinClient(MockClient):
         return gatecoin_livetickers.response
 
 
-class MockGDAXClient(MockClient):
+class MockCoinbaseProClient(MockClient):
 
     def get_currencies(self):
-        return gdax_currencies.response
+        return coinbasepro_currencies.response
 
     def get_product_ticker(self, id):
-        return gdax_ticker.response(id)
+        return coinbasepro_ticker.response(id)
 
     def get_products(self):
-        return gdax_products.response
+        return coinbasepro_products.response
 
     def get_product_historic_rates(self, product_id, **kwargs):
-        return gdax_rates.response(product_id, **kwargs)
+        return coinbasepro_rates.response(product_id, **kwargs)
 
 
 class MockLiquiClient(MockClient):

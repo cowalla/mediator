@@ -1,6 +1,8 @@
 # MEDIATOR
 A meta client that makes interracting with several exchanges painless. Mediator knows how to interract with these exchanges so you don't have to.
 
+WARNING: this software is not maintained and anyone who uses it for an actual purpose is an idiot.
+If you use it (which you shouldn't), it should go without saying that I take no responsibility for what happens to you.
 
 ### Getting started
 

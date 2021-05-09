@@ -1,6 +1,6 @@
 from crypto_mediator.clients.helpers.bittrex_helper import BittrexClientHelper
 from crypto_mediator.clients.helpers.gatecoin_helper import GatecoinClientHelper
-from crypto_mediator.clients.helpers.gdax_helper import GDAXClientHelper
+from crypto_mediator.clients.helpers.coinbasepro_helper import CoinbaseProClientHelper
 from crypto_mediator.clients.helpers.liqui_helper import LiquiClientHelper
 from crypto_mediator.clients.helpers.poloniex_helper import PoloniexClientHelper
 from crypto_mediator.clients.helpers.coinbase_helper import CoinbaseClientHelper

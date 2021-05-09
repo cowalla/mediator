@@ -24,7 +24,7 @@ MEDIATOR_SPLIT_CHARACTER = '_'
 BITTREX = 'bittrex'
 COINBASE = 'coinbase'
 GATECOIN = 'gatecoin'
-GDAX = 'gdax'
+COINBASEPRO = 'coinbasepro'
 LIQUI = 'liqui'
 POLONIEX = 'poloniex'
 
