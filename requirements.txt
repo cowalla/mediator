@@ -6,4 +6,4 @@ poloniex @ https://github.com/s4w3d0ff/python-poloniex/archive/v0.4.6.zip
 pytest==3.2.5
 python-bittrex @ git+https://github.com/ericsomdahl/python-bittrex.git@2dbc08e3221e07a9e618eaa025d98ed197d28e31
 python-dateutil==2.8.1
-requests==2.13.0
+requests==2.20.0

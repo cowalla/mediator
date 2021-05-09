@@ -30,7 +30,7 @@ setup(
         'liqui==1.0.1',
         'pytest==3.2.5',
         'python-dateutil==2.8.1',
-        'requests==2.13.0',
+        'requests==2.20.0',
     ],
     dependency_links=[
         'https://github.com/ericsomdahl/python-bittrex',
