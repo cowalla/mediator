@@ -25,12 +25,12 @@ setup(
 
     ],
     install_requires=[
-        'cbpro==1.1.4',
-        'coinbase==2.0.6',
-        'liqui==1.0.1',
-        'pytest==3.2.5',
-        'python-dateutil==2.8.1',
-        'requests==2.13.0',
+        'cbpro>=1.1.4',
+        'coinbase>=2.0.6',
+        'liqui>=1.0.1',
+        'pytest>=3.2.5',
+        'python-dateutil>=2.8.1',
+        'requests>=2.13.0',
     ],
     dependency_links=[
         'https://github.com/ericsomdahl/python-bittrex',
